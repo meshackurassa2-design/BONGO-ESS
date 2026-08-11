@@ -364,7 +364,8 @@ export default function HomeScreen() {
   }
 
   const heroTrack = featured[0];
-  const jumpBackTracks = featured.slice(1, 7);
+  // Bug 2 Fix: Use actual listening history; fall back to featured for new users
+  const jumpBackTracks = recentlyPlayed.length > 0 ? recentlyPlayed.slice(0, 6) : featured.slice(1, 7);
   const top10Tracks = trending.slice(0, 10);
 
 
@@ -992,7 +993,8 @@ export default function HomeScreen() {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
               {albums.map(album => (
-                <TouchableOpacity key={album.id} style={styles.albumCard}>
+                // Bug 1 Fix: navigate to playlist screen so user can open album and play songs
+                <TouchableOpacity key={album.id} style={styles.albumCard} onPress={() => router.push({ pathname: '/playlist/[id]', params: { id: album.id } })} activeOpacity={0.8}>
                   <Image source={album.cover_url ? { uri: album.cover_url } : getFallbackImage(album.id)} style={styles.albumImage} transition={200} cachePolicy="memory-disk" />
                   <Text style={styles.albumTitle} numberOfLines={1}>{album.title}</Text>
                   <Text style={styles.albumSubtitle}>{album.track_count} Nyimbo</Text>

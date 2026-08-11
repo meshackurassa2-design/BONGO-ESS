@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import TrackPlayer, { Event, State as TPState, AppKilledPlaybackBehavior, Capability, IOSCategory, IOSCategoryMode, IOSCategoryOptions, PitchAlgorithm } from 'react-native-track-player';
 import { Track } from '../constants';
 import { useOfflineStore } from './offlineStore';
@@ -112,7 +114,10 @@ type PlayerStore = {
   reorderQueue: (from: number, to: number) => void;
 };
 
-export const usePlayerStore = create<PlayerStore>((set, get) => ({
+export const usePlayerStore = create<PlayerStore>()(
+  persist(
+    (set, get) => ({
+
   currentTrack: null,
   queue: [],
   isShuffled: false,
@@ -157,6 +162,41 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         ],
       });
       set({ isPlayerReady: true });
+
+      // Bug 3 Fix: Restore last track into TrackPlayer (paused) so user can continue
+      const persistedTrack = get().currentTrack;
+      if (persistedTrack) {
+        try {
+          const decryptedUri = await useOfflineStore.getState().getDecryptedUri(persistedTrack.id);
+          const offlineCoverUri = decryptedUri ? await useOfflineStore.getState().getOfflineCoverUri(persistedTrack.id) : null;
+          let url = decryptedUri || persistedTrack.audio_url;
+          if (url && typeof url === 'string') url = url.replace(/ /g, '%20');
+
+          const tpTrack: any = {
+            id: persistedTrack.id,
+            url,
+            title: persistedTrack.title,
+            artist: persistedTrack.artist_name || 'Unknown Artist',
+            duration: persistedTrack.duration_sec,
+            pitchAlgorithm: PitchAlgorithm.Linear,
+          };
+          if (!decryptedUri && persistedTrack.cover_url) {
+            tpTrack.artwork = persistedTrack.cover_url;
+          } else if (offlineCoverUri) {
+            tpTrack.artwork = 'file://' + offlineCoverUri.replace('file://', '');
+          } else {
+            tpTrack.artwork = require('../assets/icon.png');
+          }
+
+          const currentQueue = await TrackPlayer.getQueue();
+          if (currentQueue.length === 0) {
+            await TrackPlayer.add([tpTrack]);
+            await TrackPlayer.pause();
+          }
+        } catch (restoreErr) {
+          console.log('Failed to restore last track:', restoreErr);
+        }
+      }
     } catch (e) {
       console.log('TrackPlayer init error:', e);
       if (String(e).includes('already initialized')) {
@@ -370,7 +410,17 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       return { queue: q };
     });
   }
-}));
+  }),
+  {
+    name: 'bongo-player-storage',
+    storage: createJSONStorage(() => AsyncStorage),
+    // Only persist currentTrack and queue — runtime state like timers/mode stays ephemeral
+    partialize: (state) => ({
+      currentTrack: state.currentTrack,
+      queue: state.queue,
+    }),
+  }
+));
 
 try {
   TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, async (event) => {

@@ -88,5 +88,6 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  // Bug 6 Fix: explicit dark background prevents white flash before AnimatedSplash mounts
+  root: { flex: 1, backgroundColor: '#0A0A0F' },
 });

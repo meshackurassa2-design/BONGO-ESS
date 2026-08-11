@@ -755,13 +755,14 @@ export default function PlayerScreen() {
       {/* Info & Actions */}
       <View style={styles.infoRow}>
         <View style={styles.infoWrap}>
-          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>{currentTrack.title}</Text>
+          {/* Bug 4 Fix: Use numberOfLines={2} so long titles wrap rather than shrink unreadably */}
+          <Text style={styles.title} numberOfLines={2}>{currentTrack.title}</Text>
           <TouchableOpacity onPress={() => {
             router.back();
             setTimeout(() => router.push(`/artist/${currentTrack.user_id}`), 100);
           }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={styles.artist} numberOfLines={1} adjustsFontSizeToFit>{currentTrack.artist_name}</Text>
+              <Text style={styles.artist} numberOfLines={1}>{currentTrack.artist_name}</Text>
               {currentTrack.profile?.is_verified && (
                 <Ionicons name="checkmark-circle" size={14} color={COLORS.gold} style={{ marginLeft: 4 }} />
               )}
@@ -1061,28 +1062,40 @@ export default function PlayerScreen() {
                   reorderQueue(from, to);
                 }}
                 renderItem={({ item, getIndex, drag, isActive }: RenderItemParams<any>) => (
-                  <View style={{ 
-                    flexDirection: 'row', 
-                    alignItems: 'center', 
-                    marginBottom: 16,
-                    backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
-                    padding: isActive ? 8 : 0,
-                    borderRadius: 12,
-                    marginHorizontal: isActive ? -8 : 0
-                  }}>
-                    <Text style={{ color: COLORS.textTertiary, fontSize: 12, width: 24, fontWeight: '700' }}>{(getIndex() || 0) + 1}</Text>
+                  // Bug 5 Fix: Tap a song in Up Next to play it immediately
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      const { playTrack, queue: q } = usePlayerStore.getState();
+                      playTrack(item, q);
+                      setShowQueueModal(false);
+                    }}
+                    style={{ 
+                      flexDirection: 'row', 
+                      alignItems: 'center', 
+                      marginBottom: 16,
+                      backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : currentTrack?.id === item.id ? 'rgba(212,175,55,0.1)' : 'transparent',
+                      padding: isActive ? 8 : 8,
+                      borderRadius: 12,
+                      marginHorizontal: -8
+                    }}
+                  >
+                    <Text style={{ color: currentTrack?.id === item.id ? COLORS.gold : COLORS.textTertiary, fontSize: 12, width: 24, fontWeight: '700' }}>{(getIndex() || 0) + 1}</Text>
                     <Image source={{ uri: item.cover_url }} style={{ width: 44, height: 44, borderRadius: 8, marginRight: 12 }} />
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: COLORS.textPrimary, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{item.title}</Text>
+                      <Text style={{ color: currentTrack?.id === item.id ? COLORS.gold : COLORS.textPrimary, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{item.title}</Text>
                       <Text style={{ color: COLORS.textSecondary, fontSize: 14 }} numberOfLines={1}>{item.artist_name}</Text>
                     </View>
+                    {currentTrack?.id === item.id && (
+                      <Ionicons name="volume-medium" size={18} color={COLORS.gold} style={{ marginRight: 4 }} />
+                    )}
                     <TouchableOpacity onLongPress={drag} delayLongPress={150} style={{ padding: 12 }}>
                       <Ionicons name="reorder-three" size={24} color={COLORS.textTertiary} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => removeTrackFromQueue(getIndex() || 0)} style={{ padding: 12, marginRight: -12 }}>
                       <Ionicons name="close-circle-outline" size={20} color={COLORS.textTertiary} />
                     </TouchableOpacity>
-                  </View>
+                  </TouchableOpacity>
                 )}
               />
             )}
