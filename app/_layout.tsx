@@ -1,5 +1,9 @@
 import { useEffect } from 'react';
 import { LogBox, Alert } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Keep the native splash screen visible until we are ready — this PREVENTS the white flash
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const originalHandler = global.ErrorUtils?.getGlobalHandler?.();
 if (global.ErrorUtils) {
@@ -25,8 +29,6 @@ import '../i18n';
 // Ignore harmless background Supabase auth network errors in dev mode
 LogBox.ignoreLogs(['TypeError: Network request failed']);
 
-
-
 const customTheme = {
   ...DarkTheme,
   colors: {
@@ -49,23 +51,26 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    // Initialize Auth Store
     useAuthStore.getState().init();
   }, []);
 
   useEffect(() => {
+    // Hide the NATIVE splash screen only once fonts are loaded and auth has resolved.
+    // This is the real fix — the native splash stays dark until we're ready.
+    if (fontsLoaded && !isLoading) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded, isLoading]);
+
+  useEffect(() => {
     if (isLoading) return;
     const inAuthGroup = segments[0] === 'auth';
-    
     if (!session && !inAuthGroup && !isOfflineMode) {
       router.replace('/auth');
     } else if ((session || isOfflineMode) && inAuthGroup) {
       router.replace('/');
     }
   }, [session, isLoading, segments, isOfflineMode]);
-
-  // We no longer return null here, we let the app mount behind the splash screen
-  // if (isLoading) return null;
 
   return (
     <GestureHandlerRootView style={styles.root}>
@@ -80,7 +85,7 @@ export default function RootLayout() {
           <Stack.Screen name="artist/[id]" />
           <Stack.Screen name="genre/[name]" />
         </Stack>
-        <AnimatedSplash isReady={!isLoading} />
+        <AnimatedSplash isReady={fontsLoaded && !isLoading} />
         <ThemeEffects />
       </ThemeProvider>
     </GestureHandlerRootView>
@@ -88,6 +93,5 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  // Bug 6 Fix: explicit dark background prevents white flash before AnimatedSplash mounts
   root: { flex: 1, backgroundColor: '#0A0A0F' },
 });
