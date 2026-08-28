@@ -149,9 +149,26 @@ export const usePlayerStore = create<PlayerStore>()(
         android: {
           appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback
         },
-        capabilities: [],
-        compactCapabilities: [],
-        notificationCapabilities: [],
+        capabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.SkipToNext,
+          Capability.SkipToPrevious,
+          Capability.Stop,
+          Capability.SeekTo
+        ],
+        compactCapabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.SkipToNext,
+          Capability.SkipToPrevious
+        ],
+        notificationCapabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.SkipToNext,
+          Capability.SkipToPrevious
+        ],
       });
       set({ isPlayerReady: true });
 

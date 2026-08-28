@@ -3,14 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as ScreenCapture from 'expo-screen-capture';
-import { captureRef } from 'react-native-view-shot';
-import * as MediaLibrary from 'expo-media-library';
+import { ResizeMode, Video } from 'expo-av';
 import { usePlayerStore } from '../store/playerStore';
 import { useOfflineStore } from '../store/offlineStore';
 import { useThemeStore } from '../store/themeStore';
@@ -21,7 +19,6 @@ import { ScrollView, FlatList } from 'react-native';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useProgress, usePlaybackState, State } from '../store/playerStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import GlassBackButton from '../components/GlassBackButton';
 
 const LyricLine = ({ text, isActive, isNext, isPrev, COLORS }: { text: string, isActive: boolean, isNext: boolean, isPrev: boolean, COLORS: any }) => {
   const anim = useRef(new Animated.Value(0)).current;
@@ -100,22 +97,6 @@ export default function PlayerScreen() {
   } = usePlayerStore();
 
   const isPlayingRef = useRef(false);
-  const viewShotRef = useRef<View>(null);
-
-  const takeAdminScreenshot = async () => {
-    try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Need media library permissions to save screenshot.');
-        return;
-      }
-      const uri = await captureRef(viewShotRef, { format: 'png', quality: 1 });
-      await MediaLibrary.saveToLibraryAsync(uri);
-      Alert.alert('Success', 'Admin screenshot saved to your gallery!');
-    } catch (e: any) {
-      Alert.alert('Error', 'Could not save screenshot: ' + e.message);
-    }
-  };
 
   const { downloadTrack, isDownloaded, isDownloading, downloadProgress } = useOfflineStore();
 
@@ -130,7 +111,6 @@ export default function PlayerScreen() {
   const [timeLeft, setTimeLeft] = useState<string | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const session = useAuthStore(s => s.session);
-  const profile = useAuthStore(s => s.profile);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [myPlaylists, setMyPlaylists] = useState<any[]>([]);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
@@ -139,7 +119,6 @@ export default function PlayerScreen() {
   const [isLyricsFullscreen, setIsLyricsFullscreen] = useState(false);
   const [lyricsLang, setLyricsLang] = useState<'swahili'|'english'>('swahili');
   const [showQueueModal, setShowQueueModal] = useState(false);
-  const [eqBands, setEqBands] = useState([0.5, 0.5, 0.5, 0.5, 0.5]); // 60Hz, 230Hz, 910Hz, 3.6kHz, 14kHz
 
   const parsedLyrics = useMemo(() => {
     let rawLyrics = currentTrack?.lyrics;
@@ -187,7 +166,7 @@ export default function PlayerScreen() {
     return result;
   }, [currentTrack, durationMs, lyricsLang]);
 
-  const lyricsScrollRef = useRef<ScrollView>(null);
+  const lyricsScrollRef = useRef<FlatList>(null);
 
 
 
@@ -202,14 +181,14 @@ export default function PlayerScreen() {
   }, [positionMs, parsedLyrics]);
 
   useEffect(() => {
-      if (showLyrics && lyricsScrollRef.current && activeLyricIndex >= 0 && parsedLyrics) {
-        try {
-          lyricsScrollRef.current.scrollTo({ y: activeLyricIndex * 40, animated: true });
-        } catch (e) {
-          // scroll might fail if items are not rendered yet
-        }
+    if (showLyrics && lyricsScrollRef.current && activeLyricIndex >= 0 && parsedLyrics) {
+      try {
+        lyricsScrollRef.current.scrollToIndex({ index: activeLyricIndex, animated: true, viewPosition: 0.5 });
+      } catch (e) {
+        // FlatList scrollToIndex might fail if items are not rendered yet
       }
-    }, [activeLyricIndex, showLyrics, parsedLyrics]);
+    }
+  }, [activeLyricIndex, showLyrics, parsedLyrics]);
 
   const openPlaylistModal = async () => {
     if (!session) {
@@ -245,6 +224,15 @@ export default function PlayerScreen() {
     }
   };
 
+  useEffect(() => {
+    // Prevent screen capture while player is active
+    ScreenCapture.preventScreenCaptureAsync();
+
+    return () => {
+      ScreenCapture.allowScreenCaptureAsync();
+    };
+  }, []);
+
   const handleShare = async () => {
     if (!currentTrack) return;
     setShowShareModal(true);
@@ -266,7 +254,7 @@ export default function PlayerScreen() {
             }
             try {
               const { error } = await supabase.from('copyright_reports').insert({
-                track_id: currentTrack?.id,
+                track_id: currentTrack.id,
                 reporter_id: session.user.id,
                 reason: 'Unauthorized use of copyrighted material'
               });
@@ -280,6 +268,128 @@ export default function PlayerScreen() {
       ]
     );
   };
+
+  // Animation values
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const armAnim = useRef(new Animated.Value(-30)).current;
+  const flyX = useRef(new Animated.Value(0)).current;
+  const flyY = useRef(new Animated.Value(0)).current;
+
+  const currentSpin = useRef(0);
+  const spinLoop = useRef<any>(null);
+  const [isScratching, setIsScratching] = useState(false);
+  const [scratchPosMs, setScratchPosMs] = useState(0);
+
+  // Generate static dust particles so they don't re-render randomly
+  const dustParticles = useMemo(() => {
+    return [...Array(45)].map((_, i) => ({
+      top: `${Math.random() * 90 + 5}%`,
+      left: `${Math.random() * 90 + 5}%`,
+      width: Math.random() * 5 + 1,
+      height: Math.random() * 5 + 1,
+      opacity: Math.random() * 0.6 + 0.2,
+      rotate: `${Math.random() * 360}deg`,
+      isGrime: Math.random() > 0.7
+    }));
+  }, []);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const flyAnim = () => {
+      if (!isMounted) return;
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(flyX, { toValue: Math.random() * 200 - 100, duration: 300, easing: Easing.bezier(0.25, 0.1, 0.25, 1), useNativeDriver: true }),
+          Animated.timing(flyY, { toValue: Math.random() * 200 - 100, duration: 300, easing: Easing.bezier(0.25, 0.1, 0.25, 1), useNativeDriver: true })
+        ]),
+        Animated.parallel([
+          Animated.timing(flyX, { toValue: Math.random() * 300 - 150, duration: 200, easing: Easing.linear, useNativeDriver: true }),
+          Animated.timing(flyY, { toValue: Math.random() * 300 - 150, duration: 200, easing: Easing.linear, useNativeDriver: true })
+        ]),
+        Animated.parallel([
+          Animated.timing(flyX, { toValue: Math.random() * 150 - 75, duration: 500, easing: Easing.bezier(0.42, 0, 1, 1), useNativeDriver: true }),
+          Animated.timing(flyY, { toValue: Math.random() * 150 - 75, duration: 500, easing: Easing.bezier(0.42, 0, 1, 1), useNativeDriver: true })
+        ]),
+        // Small pause
+        Animated.delay(150),
+        Animated.parallel([
+          Animated.timing(flyX, { toValue: 0, duration: 600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+          Animated.timing(flyY, { toValue: 0, duration: 600, easing: Easing.inOut(Easing.ease), useNativeDriver: true })
+        ])
+      ]).start(({ finished }: { finished: boolean }) => {
+        if (finished && isMounted) flyAnim();
+      });
+    };
+    flyAnim();
+    return () => { isMounted = false; };
+  }, []);
+
+  const startSpin = () => {
+    spinLoop.current = Animated.timing(spinAnim, {
+      toValue: currentSpin.current + 1,
+      duration: 3000,
+      easing: Easing.linear,
+      useNativeDriver: true,
+    });
+    spinLoop.current.start(({ finished }) => {
+      if (finished && isPlaying && !isScratching) {
+        currentSpin.current += 1;
+        startSpin();
+      }
+    });
+  };
+
+  useEffect(() => {
+    const activePos = isScratching ? scratchPosMs : positionMs;
+    const safeDuration = Math.max(1, durationMs || 1);
+    const progress = activePos / safeDuration;
+    const targetAngle = isNaN(progress) ? 18 : 18 + (progress * 22); // Outer groove (18deg) to inner groove (40deg)
+
+    // Animate the tonearm
+    Animated.spring(armAnim, {
+      toValue: (isPlaying || isScratching) ? targetAngle : -30,
+      toValue: (isActuallyPlaying || isScratching) ? targetAngle : -30,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 50
+    }).start();
+  }, [isActuallyPlaying, isScratching, positionMs, durationMs, scratchPosMs]);
+
+  useEffect(() => {
+    if (isActuallyPlaying && !isScratching) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(scaleAnim, { toValue: 1.03, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+          Animated.timing(scaleAnim, { toValue: 1, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true })
+        ])
+      ).start();
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.12, duration: 3000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 3000, easing: Easing.inOut(Easing.ease), useNativeDriver: true })
+        ])
+      ).start();
+      
+      startSpin();
+    } else {
+      scaleAnim.stopAnimation();
+      pulseAnim.stopAnimation();
+      if (spinLoop.current) spinLoop.current.stop();
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
+      Animated.spring(pulseAnim, { toValue: 1, useNativeDriver: true }).start();
+    }
+    
+    return () => {
+      if (spinLoop.current) spinLoop.current.stop();
+    };
+  }, [isPlaying, isScratching]);
 
   // Lyrics Slide Animation
   const slideLyricsAnim = useRef(new Animated.Value(0)).current;
@@ -313,7 +423,84 @@ export default function PlayerScreen() {
     outputRange: [0, 1],
   });
 
+  const spin = spinAnim.interpolate({
+    inputRange: [-100, 100],
+    outputRange: ['-36000deg', '36000deg']
+  });
 
+  const armRotation = armAnim.interpolate({
+    inputRange: [-30, 45],
+    outputRange: ['-30deg', '45deg']
+  });
+
+  const flyRotation = flyX.interpolate({
+    inputRange: [-150, 150],
+    outputRange: ['-60deg', '60deg']
+  });
+
+  const lastSeek = useRef(0);
+  const initialScratchPos = useRef(0);
+  const wasPlaying = useRef(false);
+  const positionMsRef = useRef(0);
+
+  useEffect(() => {
+    positionMsRef.current = positionMs;
+  }, [positionMs]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (evt, gestureState) => Math.abs(gestureState.dx) > 5,
+      onPanResponderGrant: () => {
+        setIsScratching(true);
+        wasPlaying.current = isPlayingRef.current;
+        if (isPlayingRef.current) togglePlayPause();
+        
+        const currentPos = positionMsRef.current;
+        initialScratchPos.current = currentPos;
+        setScratchPosMs(currentPos);
+        spinAnim.stopAnimation((val) => { currentSpin.current = val; });
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        // Rotate visually based on horizontal drag
+        const deltaRot = gestureState.dx / 150;
+        spinAnim.setValue(currentSpin.current + deltaRot);
+
+        // Calculate scrub position (width of screen = 30 seconds scrub)
+        const deltaMs = (gestureState.dx / width) * 30000;
+        const newPos = Math.max(0, Math.min(durationMs, initialScratchPos.current + deltaMs));
+        setScratchPosMs(newPos);
+        
+        // Throttle seekTo to avoid stuttering
+        if (Date.now() - lastSeek.current > 200) {
+          seekTo(newPos);
+          lastSeek.current = Date.now();
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        setIsScratching(false);
+        const deltaRot = gestureState.dx / 150;
+        currentSpin.current += deltaRot;
+        
+        const deltaMs = (gestureState.dx / width) * 30000;
+        seekTo(Math.max(0, Math.min(durationMs, initialScratchPos.current + deltaMs)));
+        
+        if (wasPlaying.current) {
+          setTimeout(() => {
+            if (!isPlayingRef.current) togglePlayPause();
+          }, 300); // Slight delay to let seek resolve
+        }
+      },
+      onPanResponderTerminate: (evt, gestureState) => {
+        setIsScratching(false);
+        if (wasPlaying.current) {
+          setTimeout(() => {
+            if (!isPlayingRef.current) togglePlayPause();
+          }, 300);
+        }
+      }
+    })
+  ).current;
 
 
   useEffect(() => {
@@ -339,7 +526,9 @@ export default function PlayerScreen() {
   if (!currentTrack) {
     return (
       <View style={styles.container}>
-        <GlassBackButton onPress={() => router.back()} style={{ marginTop: 50, marginLeft: 20 }} />
+        <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
+          <Ionicons name="chevron-down" size={32} color={COLORS.textPrimary} />
+        </TouchableOpacity>
       </View>
     );
   }
@@ -367,39 +556,30 @@ export default function PlayerScreen() {
   }
 
   return (
-    <View style={styles.container} ref={viewShotRef} collapsable={false}>
-      {/* Blurred cover art as full-screen background */}
-      <View style={StyleSheet.absoluteFillObject}>
-        {currentTrack.cover_url ? (
-          <Image
-            source={{ uri: currentTrack.cover_url }}
-            style={StyleSheet.absoluteFillObject}
-            blurRadius={40}
-            cachePolicy="memory-disk"
-          />
-        ) : null}
-        {/* Dark overlay so it's not too bright */}
-        <LinearGradient
-          colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.75)', 'rgba(0,0,0,0.92)']}
-          style={StyleSheet.absoluteFillObject}
-        />
-      </View>
-
-      {/* Glass overlay on entire screen */}
-      <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFillObject} />
-      <ScrollView style={StyleSheet.absoluteFillObject} showsVerticalScrollIndicator={false} bounces={false}>
-        <View style={{ minHeight: Dimensions.get('window').height, paddingTop: insets.top + 28, paddingBottom: insets.bottom + 80, justifyContent: 'space-between' }}>
+    <View style={[styles.container, { paddingTop: insets.top + 28 }]}>
+      {/* Canvas Video Background */}
+      <Video
+        source={{ uri: 'https://cdn.pixabay.com/video/2018/01/22/13859-252504829_tiny.mp4' }}
+        style={StyleSheet.absoluteFillObject}
+        resizeMode={ResizeMode.COVER}
+        isLooping
+        isMuted
+        shouldPlay
+      />
+      <LinearGradient colors={['rgba(26,26,26,0.7)', COLORS.black]} style={StyleSheet.absoluteFillObject} />
 
       {/* Header */}
       <View style={styles.header}>
-        <GlassBackButton onPress={() => router.back()} />
+        <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()}>
+          <Ionicons name="chevron-down" size={32} color={COLORS.textPrimary} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Inacheza Sasa</Text>
         <TouchableOpacity style={styles.iconBtn} onPress={() => setShowSleepTimer(true)}>
           <Ionicons name={sleepTimerMs ? "alarm" : "alarm-outline"} size={26} color={sleepTimerMs ? COLORS.gold : COLORS.textPrimary} />
           {timeLeft && <Text style={{ color: COLORS.gold, fontSize: 10, fontWeight: '700', marginTop: 2, width: 56, textAlign: 'center' }} numberOfLines={1} adjustsFontSizeToFit>{timeLeft}</Text>}
         </TouchableOpacity>
       </View>
-      {/* Cinematic Album Art OR Lyrics */}
+      {/* Professional DJ Vinyl Art OR Lyrics */}
       <View style={{ width: width - 60, height: width - 60, alignSelf: 'center', justifyContent: 'center' }}>
         
         {/* Lyrics View */}
@@ -424,37 +604,153 @@ export default function PlayerScreen() {
           )}
 
 
-          {parsedLyrics ? (<ScrollView 
+          {parsedLyrics ? (<FlatList 
             ref={lyricsScrollRef}
+            data={parsedLyrics}
+            keyExtractor={(item, index) => index.toString()}
             style={{ width: width - 60, height: width - 60, alignSelf: 'center', paddingHorizontal: 32 }} 
             contentContainerStyle={{ paddingVertical: 100, alignItems: 'center' }}
             showsVerticalScrollIndicator={false}
-          >
-            {parsedLyrics.length > 0 ? parsedLyrics.map((item, index) => {
+            initialNumToRender={100}
+            maxToRenderPerBatch={100}
+            onScrollToIndexFailed={(info) => {
+              const wait = new Promise(resolve => setTimeout(resolve, 500));
+              wait.then(() => {
+                lyricsScrollRef.current?.scrollToIndex({ index: info.index, animated: true, viewPosition: 0.5 });
+              });
+            }}
+            renderItem={({ item, index }) => {
               const isActive = index === activeLyricIndex;
               const isNext = index === activeLyricIndex + 1;
               const isPrev = index === activeLyricIndex - 1;
               
-              return <LyricLine key={index} text={item.text} isActive={isActive} isNext={isNext} isPrev={isPrev} COLORS={COLORS} />;
-            }) : (
+              return <LyricLine text={item.text} isActive={isActive} isNext={isNext} isPrev={isPrev} COLORS={COLORS} />;
+            }}
+            ListEmptyComponent={() => (
               <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 40 }}>
                 <Ionicons name="mic-off-outline" size={64} color={COLORS.textTertiary} />
                 <Text style={{ color: COLORS.textSecondary, marginTop: 16, fontSize: 16, fontWeight: '600' }}>No synced lyrics available.</Text>
               </View>
             )}
-          </ScrollView>) : null}
+          />) : null}
         </Animated.View>
 
-        {/* Cinematic Album Cover */}
+        {/* Vinyl View */}
         <Animated.View pointerEvents={showLyrics ? 'none' : 'auto'} style={{ position: 'absolute', width: width - 60, height: width - 60, transform: [{ translateX: vinylTranslateX }], opacity: vinylOpacity, zIndex: showLyrics ? 1 : 10 }}>
-          <View style={{ width: '100%', height: '100%', borderRadius: 16, overflow: 'hidden', backgroundColor: COLORS.card, shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.6, shadowRadius: 30, elevation: 15 }}>
+          <View style={[styles.coverWrap, { marginBottom: 0 }]} {...panResponder.panHandlers}>
+          {/* Outer Turntable Platter (Static) */}
+        <View style={styles.platterBase}>
+          <View style={styles.platterDots} />
+        </View>
+
+        {isPlaying && (
+          <Animated.View style={[styles.pulseCircle, { transform: [{ scale: pulseAnim }], opacity: pulseAnim.interpolate({ inputRange: [1, 1.15], outputRange: [0.6, 0] }) }]} />
+        )}
+
+        {/* Spinning Vintage Vinyl Record */}
+        <Animated.View style={[styles.vinylRecord, { transform: [{ scale: scaleAnim }, { rotate: spin }] }]}>
+          {/* Heavy Grime Base Layer */}
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(50, 35, 15, 0.2)' }]} pointerEvents="none" />
+          
+          {/* Base Vinyl Grooves */}
+          <LinearGradient colors={['rgba(255,255,255,0.03)', 'rgba(0,0,0,0.8)', 'rgba(255,255,255,0.03)']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+          <View style={[styles.vinylGroove, { width: width - 90, height: width - 90, opacity: 0.3 }]} />
+          <View style={[styles.vinylGroove, { width: width - 110, height: width - 110, opacity: 0.5 }]} />
+          <View style={[styles.vinylGroove, { width: width - 130, height: width - 130, opacity: 0.8 }]} />
+          <View style={[styles.vinylGroove, { width: width - 160, height: width - 160, opacity: 0.4 }]} />
+          <View style={[styles.vinylGroove, { width: width - 180, height: width - 180, opacity: 0.6 }]} />
+          
+          {/* Dirt and Dust Particles */}
+          {dustParticles.map((dust, i) => (
+            <View key={`dust-${i}`} style={{
+              position: 'absolute',
+              top: dust.top,
+              left: dust.left,
+              width: dust.width,
+              height: dust.height,
+              backgroundColor: dust.isGrime ? '#3a2b1c' : '#e6dfd3',
+              opacity: dust.opacity,
+              borderRadius: 2,
+              transform: [{ rotate: dust.rotate }]
+            }} pointerEvents="none" />
+          ))}
+
+          {/* Heavy Vintage Scratches */}
+          <View style={[styles.vintageScratch, { width: 140, top: '20%', left: '10%', transform: [{ rotate: '43deg' }], opacity: 0.6 }]} />
+          <View style={[styles.vintageScratch, { width: 80, top: '70%', left: '15%', transform: [{ rotate: '-12deg' }], opacity: 0.4 }]} />
+          <View style={[styles.vintageScratch, { width: 220, top: '50%', left: '2%', transform: [{ rotate: '88deg' }], opacity: 0.3 }]} />
+          <View style={[styles.vintageScratch, { width: 60, top: '85%', left: '60%', transform: [{ rotate: '150deg' }], opacity: 0.7 }]} />
+          <View style={[styles.vintageScratch, { width: 110, top: '10%', left: '50%', transform: [{ rotate: '25deg' }], opacity: 0.5 }]} />
+          <View style={[styles.vintageScratch, { width: 170, top: '40%', left: '30%', transform: [{ rotate: '-65deg' }], opacity: 0.25 }]} />
+          <View style={[styles.vintageScratch, { width: 90, top: '30%', left: '70%', transform: [{ rotate: '10deg' }], opacity: 0.5 }]} />
+
+          {/* Micro Scratches & Scuffs */}
+          <View style={[styles.microScratch, { width: 40, top: '45%', left: '20%', transform: [{ rotate: '70deg' }] }]} />
+          <View style={[styles.microScratch, { width: 50, top: '65%', left: '40%', transform: [{ rotate: '-30deg' }] }]} />
+          <View style={[styles.microScratch, { width: 30, top: '15%', left: '80%', transform: [{ rotate: '110deg' }] }]} />
+          <View style={[styles.microScratch, { width: 60, top: '80%', left: '25%', transform: [{ rotate: '5deg' }] }]} />
+          
+          {/* Vinyl Ring Wear (Aged fading outer ring) */}
+          <View style={styles.ringWear} pointerEvents="none" />
+          
+          {/* Center Label (Cover Art) with Vintage Sepia Fade & Paper Wear */}
+          <View style={styles.vinylCenterLabel}>
             {currentTrack.cover_url ? (
               <Image source={{ uri: currentTrack.cover_url }} style={{ width: '100%', height: '100%' }} transition={300} cachePolicy="memory-disk" />
             ) : (
-              <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
-                <Ionicons name="musical-notes" size={80} color={COLORS.textTertiary} />
+              <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#e6d5b8' }}>
+                <Ionicons name="musical-notes" size={40} color={'#5c4a3d'} />
               </View>
             )}
+            {/* Vintage Sepia Tint Overlay */}
+            <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(139, 69, 19, 0.25)' }} pointerEvents="none" />
+            {/* Paper Ring Wear Effect on Label */}
+            <View style={{ ...StyleSheet.absoluteFillObject, borderRadius: 1000, borderWidth: 15, borderColor: 'rgba(0,0,0,0.4)' }} pointerEvents="none" />
+            <View style={{ ...StyleSheet.absoluteFillObject, borderRadius: 1000, borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)', margin: 4 }} pointerEvents="none" />
+          </View>
+          
+          {/* Center Spindle Hole */}
+          <View style={styles.vinylSpindle} />
+        </Animated.View>
+
+        {/* Sharp Vinyl Glare / Scuffed Sheen (STATIC overlay) */}
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+          <LinearGradient colors={['transparent', 'rgba(255,255,255,0.12)', 'transparent', 'rgba(255,255,255,0.06)', 'transparent']} start={{x: 0.2, y: 0}} end={{x: 0.8, y: 1}} style={StyleSheet.absoluteFillObject} />
+        </View>
+
+
+        {/* Professional Tonearm (The Staff/Needle) — fixed position, only disk spins */}
+        <View style={[styles.tonearmContainer, { transform: [{ rotate: '18deg' }] }]} pointerEvents="none">
+          {/* Base/Pivot */}
+          <View style={styles.tonearmBase}>
+            <LinearGradient colors={['#333', '#111']} style={StyleSheet.absoluteFillObject} />
+            <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#888', borderWidth: 2, borderColor: '#333' }} />
+          </View>
+          {/* Main Arm */}
+          <LinearGradient colors={['#e0e0e0', '#a0a0a0', '#e0e0e0']} start={{x: 0, y: 0}} end={{x: 1, y: 0}} style={styles.tonearmStick} />
+          {/* Headshell Joint */}
+          <View style={styles.tonearmJoint} />
+          {/* Headshell/Needle block */}
+          <View style={styles.tonearmHead}>
+            <LinearGradient colors={['#2a2a2a', '#111']} style={StyleSheet.absoluteFillObject} />
+            <View style={{ width: 2, height: 4, backgroundColor: 'red', position: 'absolute', bottom: -2, right: 4 }} />
+          </View>
+        </View>
+
+        {/* The Fly */}
+        <Animated.View style={{ 
+          position: 'absolute', 
+          zIndex: 1000, 
+          transform: [{ translateX: flyX }, { translateY: flyY }, { rotate: flyRotation }],
+          pointerEvents: 'none'
+        }}>
+          {/* Fly Body */}
+          <View style={{ width: 6, height: 10, backgroundColor: '#111', borderRadius: 4 }} />
+          {/* Left Wing */}
+          <View style={{ position: 'absolute', top: 2, left: -5, width: 6, height: 8, backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: 3, transform: [{ rotate: '-45deg' }] }} />
+          {/* Right Wing */}
+          <View style={{ position: 'absolute', top: 2, right: -5, width: 6, height: 8, backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: 3, transform: [{ rotate: '45deg' }] }} />
+        </Animated.View>
           </View>
         </Animated.View>
       </View>
@@ -477,11 +773,6 @@ export default function PlayerScreen() {
           </TouchableOpacity>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {profile?.is_admin && (
-            <TouchableOpacity style={styles.downloadBtn} onPress={takeAdminScreenshot}>
-              <Ionicons name="camera" size={26} color={COLORS.gold} />
-            </TouchableOpacity>
-          )}
           <TouchableOpacity style={styles.downloadBtn} onPress={openPlaylistModal}>
             <Ionicons name="list" size={26} color={COLORS.textSecondary} />
           </TouchableOpacity>
@@ -647,57 +938,6 @@ export default function PlayerScreen() {
         </TouchableOpacity>
       </View>
 
-      </View>
-
-      {/* Glassmorphic controls panel at bottom */}
-      <BlurView intensity={30} tint="dark" style={{ marginTop: 8, marginHorizontal: 0, overflow: 'hidden', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)' }}>
-        <View style={{ padding: 24, paddingBottom: 100, backgroundColor: 'rgba(0,0,0,0.25)' }}>
-          {/* Lyrics Section */}
-          <View style={{ marginBottom: 40 }}>
-            <Text style={{ color: '#fff', fontSize: 20, fontWeight: '800', marginBottom: 16 }}>Lyrics</Text>
-            <BlurView intensity={20} tint="dark" style={{ padding: 20, borderRadius: 16, overflow: 'hidden' }}>
-              <Text style={{ color: COLORS.textSecondary, fontSize: 16, lineHeight: 24, fontWeight: '500' }}>
-                {currentTrack.lyrics || currentTrack.lyrics_swahili || currentTrack.lyrics_english || "Lyrics aren't available for this song yet. Check back later!"}
-              </Text>
-            </BlurView>
-          </View>
-
-          {/* Up Next Section */}
-          <View>
-            <Text style={{ color: '#fff', fontSize: 20, fontWeight: '800', marginBottom: 16 }}>Up Next</Text>
-            {queue.slice(0, 10).map((item, idx) => (
-              <TouchableOpacity
-                key={item.id + '-' + idx}
-                activeOpacity={0.7}
-                onPress={() => {
-                  const { playTrack, queue: q } = usePlayerStore.getState();
-                  playTrack(item, q);
-                }}
-                style={{ 
-                  flexDirection: 'row', 
-                  alignItems: 'center', 
-                  marginBottom: 12,
-                  backgroundColor: currentTrack?.id === item.id ? 'rgba(212,175,55,0.1)' : 'transparent',
-                  padding: 8,
-                  borderRadius: 12,
-                  marginHorizontal: -8
-                }}
-              >
-                <Image source={{ uri: item.cover_url || '' }} style={{ width: 48, height: 48, borderRadius: 8, marginRight: 12 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: currentTrack?.id === item.id ? COLORS.gold : COLORS.textPrimary, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{item.title}</Text>
-                  <Text style={{ color: COLORS.textSecondary, fontSize: 14 }} numberOfLines={1}>{item.artist_name}</Text>
-                </View>
-                {currentTrack?.id === item.id && (
-                  <Ionicons name="volume-medium" size={18} color={COLORS.gold} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </BlurView>
-      </ScrollView>
-
       {/* Sleep Timer Modal */}
       <Modal visible={showSleepTimer} transparent animationType="slide">
         <View style={styles.modalBg}>
@@ -737,99 +977,45 @@ export default function PlayerScreen() {
       {/* Audio Effects Modal */}
       <Modal visible={showFxModal} transparent animationType="slide">
         <View style={styles.modalBg}>
-          <View style={[styles.modalContent, { maxHeight: '85%' }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <View>
-                <Text style={styles.modalTitle}>Audio Effects</Text>
-                <Text style={styles.modalSub}>Speed & Equalizer</Text>
-              </View>
-              <TouchableOpacity onPress={() => setShowFxModal(false)} style={{ padding: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 20 }}>
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Audio Effects</Text>
+            <Text style={styles.modalSub}>Adjust playback speed and pitch</Text>
             
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Pitch & Speed */}
-              <View style={{ marginBottom: 30, backgroundColor: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 16 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: COLORS.textPrimary, fontWeight: '700' }}>Playback Speed</Text>
-                  <Text style={{ color: COLORS.gold, fontWeight: '700' }}>{playbackRate.toFixed(2)}x</Text>
-                </View>
-                <Slider
-                  style={{ width: '100%', height: 40 }}
-                  minimumValue={0.5}
-                  maximumValue={2.0}
-                  step={0.1}
-                  value={playbackRate}
-                  onValueChange={setPlaybackRate}
-                  minimumTrackTintColor={COLORS.gold}
-                  maximumTrackTintColor={COLORS.divider}
-                  thumbTintColor={COLORS.gold}
-                />
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -10 }}>
-                  <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>Slow</Text>
-                  <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>Fast</Text>
-                </View>
-                
-                {playbackRate !== 1.0 && (
-                  <TouchableOpacity onPress={() => setPlaybackRate(1.0)} style={{ marginTop: 12, alignSelf: 'flex-start' }}>
-                    <Text style={{ color: COLORS.gold, fontSize: 13, fontWeight: '600' }}>Reset Speed</Text>
-                  </TouchableOpacity>
-                )}
+            <View style={{ marginTop: 30, marginBottom: 20 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text style={{ color: COLORS.textPrimary, fontWeight: '700' }}>Speed / Pitch</Text>
+                <Text style={{ color: COLORS.gold, fontWeight: '700' }}>{playbackRate.toFixed(2)}x</Text>
               </View>
+              <Slider
+                style={{ width: '100%', height: 40 }}
+                minimumValue={0.5}
+                maximumValue={2.0}
+                step={0.1}
+                value={playbackRate}
+                onValueChange={setPlaybackRate}
+                minimumTrackTintColor={COLORS.gold}
+                maximumTrackTintColor={COLORS.divider}
+                thumbTintColor={COLORS.gold}
+              />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -10 }}>
+                <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>Slow & Low</Text>
+                <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>Fast & High</Text>
+              </View>
+            </View>
 
-              {/* Graphic Equalizer */}
-              <View style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 16, marginBottom: 20 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <Text style={{ color: COLORS.textPrimary, fontWeight: '700' }}>Music Equalizer</Text>
-                  <Text style={{ color: COLORS.textSecondary, fontSize: 12, backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>Custom</Text>
-                </View>
-                
-                {/* Sliders */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', height: 150, paddingHorizontal: 10 }}>
-                  {['60Hz', '230Hz', '910Hz', '3.6kHz', '14kHz'].map((label, idx) => (
-                    <View key={idx} style={{ alignItems: 'center' }}>
-                      <View style={{ height: 120, width: 40, justifyContent: 'center', alignItems: 'center' }}>
-                        {/* Vertical Slider implementation using transform */}
-                        <Slider
-                          style={{ width: 120, height: 40, transform: [{ rotate: '-90deg' }] }}
-                          minimumValue={0}
-                          maximumValue={1}
-                          step={0.05}
-                          value={eqBands[idx]}
-                          onValueChange={(val) => {
-                            const newBands = [...eqBands];
-                            newBands[idx] = val;
-                            setEqBands(newBands);
-                          }}
-                          minimumTrackTintColor={COLORS.gold}
-                          maximumTrackTintColor={COLORS.divider}
-                          thumbTintColor={COLORS.gold}
-                        />
-                      </View>
-                      <Text style={{ color: COLORS.textTertiary, fontSize: 10, marginTop: 8, fontWeight: '600' }}>{label}</Text>
-                    </View>
-                  ))}
-                </View>
-                
-                {/* Presets */}
-                <View style={{ flexDirection: 'row', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
-                  <TouchableOpacity onPress={() => setEqBands([0.8, 0.6, 0.4, 0.6, 0.7])} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(212,175,55,0.15)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)' }}>
-                    <Text style={{ color: COLORS.gold, fontSize: 12, fontWeight: '600' }}>Bass Boost</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setEqBands([0.3, 0.4, 0.8, 0.7, 0.5])} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                    <Text style={{ color: COLORS.textSecondary, fontSize: 12, fontWeight: '600' }}>Vocal</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setEqBands([0.5, 0.5, 0.5, 0.5, 0.5])} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                    <Text style={{ color: COLORS.textSecondary, fontSize: 12, fontWeight: '600' }}>Flat</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </ScrollView>
+            <TouchableOpacity 
+              style={[styles.sleepOptionBtn, { justifyContent: 'center', marginBottom: 16 }]}
+              onPress={() => setPlaybackRate(1.0)}
+            >
+              <Text style={styles.sleepOptionText}>Reset to Normal</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.closeModalBtn} onPress={() => setShowFxModal(false)}>
+              <Text style={styles.closeModalText}>Done</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
-
 
       {/* Playlist Selection Modal */}
       <Modal visible={showPlaylistModal} transparent={true} animationType="slide" onRequestClose={() => setShowPlaylistModal(false)}>
@@ -970,7 +1156,23 @@ const getStyles = (COLORS: any) => StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8 },
   iconBtn: { padding: 8, width: 56, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginTop: 14 },
+  coverWrap: { alignItems: 'center', justifyContent: 'center', marginBottom: 24, position: 'relative', width: width - 60, height: width - 60, alignSelf: 'center' },
+  pulseCircle: { position: 'absolute', width: width - 70, height: width - 70, borderRadius: 1000, backgroundColor: COLORS.gold },
+  vinylRecord: { width: width - 70, height: width - 70, borderRadius: (width - 70) / 2, backgroundColor: '#0a0a0a', alignItems: 'center', justifyContent: 'center', elevation: 20, shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, borderWidth: 1, borderColor: '#111', overflow: 'hidden' },
+  platterBase: { position: 'absolute', width: width - 60, height: width - 60, borderRadius: (width - 60) / 2, backgroundColor: '#1a1a1a', borderWidth: 2, borderColor: '#333', alignItems: 'center', justifyContent: 'center' },
+  platterDots: { position: 'absolute', width: width - 64, height: width - 64, borderRadius: (width - 64) / 2, borderWidth: 8, borderColor: '#2a2a2a', borderStyle: 'dashed' },
+  vinylGroove: { position: 'absolute', borderRadius: 1000, borderWidth: 1, borderColor: '#1f1f1f' },
+  vintageScratch: { position: 'absolute', height: 1, backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 1, shadowColor: '#fff', shadowOpacity: 0.3, shadowRadius: 1, shadowOffset: { width: 0, height: 0 } },
+  microScratch: { position: 'absolute', height: 0.5, backgroundColor: 'rgba(255,255,255,0.15)' },
+  ringWear: { position: 'absolute', width: '85%', height: '85%', top: '7.5%', left: '7.5%', borderRadius: 1000, borderWidth: 30, borderColor: 'rgba(255,255,255,0.02)', borderStyle: 'dotted' },
+  vinylCenterLabel: { width: 130, height: 130, borderRadius: 65, overflow: 'hidden', backgroundColor: '#e6d5b8', borderWidth: 4, borderColor: '#3d2b1f' },
+  vinylSpindle: { position: 'absolute', width: 14, height: 14, borderRadius: 7, backgroundColor: '#8c8c8c', borderWidth: 3, borderColor: '#111' },
   
+  tonearmContainer: { position: 'absolute', top: -15, right: 5, width: 60, height: 60, alignItems: 'center', justifyContent: 'center', zIndex: 100, elevation: 100 },
+  tonearmBase: { position: 'absolute', width: 48, height: 48, borderRadius: 24, backgroundColor: '#2a2a2a', borderWidth: 2, borderColor: '#111', alignItems: 'center', justifyContent: 'center', zIndex: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 4, overflow: 'hidden' },
+  tonearmStick: { position: 'absolute', top: 30, width: 10, height: 130, backgroundColor: '#ccc', zIndex: 1 },
+  tonearmJoint: { position: 'absolute', top: 156, width: 16, height: 16, backgroundColor: '#555', zIndex: 2, borderRadius: 3 },
+  tonearmHead: { position: 'absolute', top: 168, width: 22, height: 40, backgroundColor: '#111', borderRadius: 4, transform: [{ rotate: '22deg' }, { translateX: -8 }, { translateY: -4 }], borderWidth: 1, borderColor: '#333', overflow: 'hidden', zIndex: 3 },
   closeBtn: { marginTop: 50, marginLeft: 20 },
   infoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 32, marginBottom: 16 },
   infoWrap: { flex: 1, paddingRight: 16 },
@@ -985,8 +1187,8 @@ const getStyles = (COLORS: any) => StyleSheet.create({
   ctrlBtn: { padding: 10 },
   playBtn: { width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.gold, justifyContent: 'center', alignItems: 'center' },
   
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: 'rgba(20,20,20,0.85)', padding: 24, borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingBottom: 50, borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: COLORS.card, padding: 24, borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingBottom: 50 },
   modalTitle: { color: COLORS.textPrimary, fontSize: 22, fontWeight: '800', textAlign: 'center' },
   modalSub: { color: COLORS.textSecondary, fontSize: 14, textAlign: 'center', marginTop: 4 },
   sleepOptionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.cardAlt, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: COLORS.divider },
