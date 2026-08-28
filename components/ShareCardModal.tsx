@@ -1,15 +1,17 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, ActivityIndicator, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, ActivityIndicator, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Track } from '../constants';
 import { useThemeStore } from '../store/themeStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GlassBackButton from './GlassBackButton';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 interface Props {
   visible: boolean;
@@ -29,7 +31,6 @@ const FONT_STYLES = [
 
 export default function ShareCardModal({ visible, onClose, track, quote: initialQuote }: Props) {
   const { COLORS } = useThemeStore();
-  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   const viewShotRef = useRef<ViewShot>(null);
   const [sharing, setSharing] = useState(false);
@@ -60,14 +61,29 @@ export default function ShareCardModal({ visible, onClose, track, quote: initial
   const activeFont = FONT_STYLES[selectedFontIndex];
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={[styles.modalBg, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      {/* Full-screen frosted glass background using track's cover art */}
+      <View style={StyleSheet.absoluteFillObject}>
+        {track.cover_url ? (
+          <Image
+            source={{ uri: track.cover_url }}
+            style={StyleSheet.absoluteFillObject}
+            blurRadius={50}
+            cachePolicy="memory-disk"
+          />
+        ) : null}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.8)', 'rgba(0,0,0,0.95)']}
+          style={StyleSheet.absoluteFillObject}
+        />
+      </View>
+      <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFillObject} />
+
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
 
         {/* ── Header ── */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-            <Ionicons name="close" size={26} color="#fff" />
-          </TouchableOpacity>
+        <View style={[styles.header, { top: insets.top > 0 ? insets.top : 20 }]}>
+          <GlassBackButton onPress={onClose} icon="close" />
           <Text style={styles.headerTitle}>Share Quote</Text>
           <View style={{ width: 44 }} />
         </View>
@@ -106,9 +122,24 @@ export default function ShareCardModal({ visible, onClose, track, quote: initial
         <View style={styles.cardContainer}>
           <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
             <View style={styles.shareCard}>
-              <LinearGradient colors={['#C1451F', '#B33C17']} style={StyleSheet.absoluteFillObject} />
+              {/* Card bg: blurred cover art */}
+              {track.cover_url ? (
+                <Image
+                  source={{ uri: track.cover_url }}
+                  style={[StyleSheet.absoluteFillObject, { borderRadius: 24 }]}
+                  blurRadius={20}
+                  cachePolicy="memory-disk"
+                />
+              ) : (
+                <LinearGradient colors={['#1a1a2e', '#16213e']} style={StyleSheet.absoluteFillObject} />
+              )}
+              {/* Dark gradient overlay on card */}
+              <LinearGradient
+                colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.85)']}
+                style={[StyleSheet.absoluteFillObject, { borderRadius: 24 }]}
+              />
 
-              {/* Track info */}
+              {/* Glass top row */}
               <View style={styles.cardHeader}>
                 <Image source={{ uri: track.cover_url }} style={styles.trackCover} />
                 <View style={styles.trackInfo}>
@@ -117,8 +148,10 @@ export default function ShareCardModal({ visible, onClose, track, quote: initial
                 </View>
               </View>
 
-              {/* Lyric quote — selected font applied here inside the capture area */}
+              {/* Lyric quote */}
               <View style={styles.quoteWrap}>
+                {/* Quotation mark decoration */}
+                <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: 80, lineHeight: 70, fontFamily: 'serif', marginBottom: 4 }}>"</Text>
                 <Text style={[styles.quoteText, {
                   fontFamily: activeFont.fontFamily,
                   fontStyle: activeFont.fontStyle,
@@ -129,7 +162,7 @@ export default function ShareCardModal({ visible, onClose, track, quote: initial
 
               {/* Watermark */}
               <View style={styles.watermarkBox}>
-                <Image source={require('../assets/images/bongo_logo.png')} style={{ width: 26, height: 26, marginRight: 8, borderRadius: 6 }} />
+                <Image source={require('../assets/images/bongo_logo.png')} style={{ width: 22, height: 22, marginRight: 8, borderRadius: 5 }} />
                 <Text style={styles.watermarkText}>Bongo Stream</Text>
               </View>
             </View>
@@ -137,48 +170,39 @@ export default function ShareCardModal({ visible, onClose, track, quote: initial
         </View>
 
         {/* ── Share Button ── */}
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.shareBtn} onPress={handleShare} disabled={sharing}>
-            {sharing ? (
-              <ActivityIndicator color={COLORS.black} />
-            ) : (
-              <>
-                <Ionicons name="share-social" size={22} color={COLORS.black} style={{ marginRight: 8 }} />
-                <Text style={styles.shareBtnText}>Share to Story</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-
+        <TouchableOpacity style={styles.shareBtn} onPress={handleShare} disabled={sharing}>
+          {sharing ? (
+            <ActivityIndicator color={COLORS.black} />
+          ) : (
+            <>
+              <Ionicons name="share-social" size={22} color={COLORS.black} style={{ marginRight: 8 }} />
+              <Text style={styles.shareBtnText}>Share to Story</Text>
+            </>
+          )}
+        </TouchableOpacity>
       </View>
     </Modal>
   );
 }
 
-const getStyles = (COLORS: any) => StyleSheet.create({
-  // Full-screen dark overlay, column layout — no absolute positioning = no empty space
-  modalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.96)',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-  },
-
-  // ── Header ──
+const styles = StyleSheet.create({
   header: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    zIndex: 10,
   },
-  closeBtn: { padding: 8, width: 44, alignItems: 'center' },
-  headerTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  closeBtn: { width: 44, alignItems: 'center' },
+  headerTitle: { color: '#fff', fontSize: 17, fontWeight: '700', letterSpacing: 0.3 },
 
-  // ── Font Picker ──
   fontPickerSection: {
+    width: width,
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    marginBottom: 20,
   },
   fontPickerLabel: {
     color: 'rgba(255,255,255,0.45)',
@@ -189,100 +213,53 @@ const getStyles = (COLORS: any) => StyleSheet.create({
     marginBottom: 8,
     marginLeft: 4,
   },
-  fontPickerRow: {
-    gap: 8,
-    paddingHorizontal: 4,
-  },
+  fontPickerRow: { gap: 8, paddingHorizontal: 4 },
   fontPill: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   fontPillActive: {
-    backgroundColor: COLORS.gold,
-    borderColor: COLORS.gold,
+    backgroundColor: 'rgba(212,175,55,0.9)',
+    borderColor: 'rgba(212,175,55,1)',
   },
-  fontPillText: {
-    color: 'rgba(255,255,255,0.55)',
-    fontSize: 13,
-  },
-  fontPillTextActive: {
-    color: '#000',
-    fontWeight: '800',
-  },
+  fontPillText: { color: 'rgba(255,255,255,0.6)', fontSize: 13 },
+  fontPillTextActive: { color: '#000', fontWeight: '800' },
 
-  // ── Card ──
-  cardContainer: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
+  cardContainer: { alignItems: 'center', justifyContent: 'center', marginBottom: 28 },
   shareCard: {
     width: width * 0.85,
     aspectRatio: 3 / 4,
-    borderRadius: 16,
+    borderRadius: 24,
     overflow: 'hidden',
     padding: 24,
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  trackCover: { width: 48, height: 48, borderRadius: 6 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  trackCover: { width: 48, height: 48, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
   trackInfo: { flex: 1 },
-  trackTitle: {
-    fontFamily: 'Outfit_800ExtraBold',
-    color: '#fff',
-    fontSize: 15,
-    marginBottom: 2,
-  },
-  artistName: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  quoteWrap: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingVertical: 12,
-  },
-  quoteText: {
-    color: '#fff',
-    fontSize: 26,
-    lineHeight: 34,
-    letterSpacing: -0.5,
-  },
+  trackTitle: { fontFamily: 'Outfit_800ExtraBold', color: '#fff', fontSize: 15, marginBottom: 2 },
+  artistName: { color: 'rgba(255,255,255,0.65)', fontSize: 13, fontWeight: '500' },
+  quoteWrap: { flex: 1, justifyContent: 'center', paddingVertical: 12 },
+  quoteText: { color: '#fff', fontSize: 24, lineHeight: 32, letterSpacing: -0.3 },
   watermarkBox: { flexDirection: 'row', alignItems: 'center' },
-  watermarkText: {
-    fontFamily: 'Outfit_800ExtraBold',
-    color: '#fff',
-    fontSize: 16,
-    letterSpacing: -0.5,
-  },
+  watermarkText: { fontFamily: 'Outfit_800ExtraBold', color: 'rgba(255,255,255,0.8)', fontSize: 14, letterSpacing: -0.5 },
 
-  // ── Footer ──
-  footer: {
-    alignItems: 'center',
-    paddingTop: 12,
-  },
   shareBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.gold,
+    backgroundColor: 'rgba(212,175,55,0.95)',
     paddingVertical: 16,
-    paddingHorizontal: 32,
+    paddingHorizontal: 44,
     borderRadius: 30,
-    width: width * 0.85,
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
-  shareBtnText: {
-    color: COLORS.black,
-    fontSize: 17,
-    fontWeight: '800',
-  },
+  shareBtnText: { color: '#000', fontSize: 17, fontWeight: '800' },
 });

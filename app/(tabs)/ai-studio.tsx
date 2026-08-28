@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
@@ -59,27 +60,32 @@ export default function AIStudioScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       
       {/* Header */}
+      {/* Cinematic Header */}
       <View style={styles.customHeader}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {activeTab === 'Create' ? 'Create Music' : activeTab === 'Personas' ? 'Voice Personas' : activeTab === 'Cover' ? 'Upload Cover' : activeTab === 'Sounds' ? 'Sound Effects' : 'AI Studio'}
-        </Text>
-          <TouchableOpacity 
-            style={[styles.creditBadge, (profile?.credits || 0) <= 2 && { backgroundColor: 'rgba(255, 59, 48, 0.1)', borderColor: COLORS.error, borderWidth: 1 }]} 
-            onPress={() => router.push('/buy-credits')}
-          >
-            <Ionicons name="diamond" size={14} color={(profile?.credits || 0) <= 2 ? COLORS.error : COLORS.gold} />
-            <Text style={[styles.creditText, (profile?.credits || 0) <= 2 && { color: COLORS.error }]}>
-              {profile?.credits || 0}
-            </Text>
-          </TouchableOpacity>
+        <View>
+          <Text style={styles.studioLabel}>PRO STUDIO</Text>
+          <Text style={styles.headerTitle}>
+            {activeTab === 'Create' ? 'AI Composer' : activeTab === 'Personas' ? 'Voice Models' : activeTab === 'Cover' ? 'Artwork Engine' : activeTab === 'Sounds' ? 'SFX Generator' : 'AI Studio'}
+          </Text>
         </View>
+        <TouchableOpacity 
+          style={[styles.creditBadge, (profile?.credits || 0) <= 2 ? { backgroundColor: COLORS.gold } : {}]} 
+          onPress={() => router.push('/buy-credits')}
+          activeOpacity={0.8}
+        >
+          <LinearGradient colors={['rgba(212,175,55,0.2)', 'rgba(212,175,55,0.05)']} style={StyleSheet.absoluteFill} />
+          <Ionicons name="diamond" size={14} color={(profile?.credits || 0) <= 2 ? COLORS.black : COLORS.gold} />
+          <Text style={[styles.creditText, (profile?.credits || 0) <= 2 && { color: COLORS.black }]}>
+            {profile?.credits || 0} Credits
+          </Text>
+          <Ionicons name="add-circle" size={16} color={(profile?.credits || 0) <= 2 ? COLORS.black : COLORS.gold} />
+        </TouchableOpacity>
+      </View>
       
-      {/* Premium Tab Bar for Lateral Navigation */}
+      {/* Floating Glassmorphism Navigation */}
       <View style={styles.tabContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabScroll}>
+        <BlurView intensity={40} tint="dark" style={styles.glassTabs}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabScroll}>
             {TABS.map(tab => {
               const isActive = activeTab === tab;
               return (
@@ -91,8 +97,9 @@ export default function AIStudioScreen() {
                 >
                   {isActive && (
                     <LinearGradient 
-                      colors={['rgba(212, 175, 55, 0.2)', 'rgba(212, 175, 55, 0.05)']} 
-                      style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                      colors={['rgba(212, 175, 55, 0.4)', 'rgba(212, 175, 55, 0.1)']} 
+                      start={{x: 0, y: 0}} end={{x: 0, y: 1}}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
                     />
                   )}
                   <Text style={[styles.tabText, isActive && styles.activeTabText]}>{tab}</Text>
@@ -100,7 +107,8 @@ export default function AIStudioScreen() {
               );
             })}
           </ScrollView>
-        </View>
+        </BlurView>
+      </View>
 
       <View style={styles.content}>
         {activeTab === 'Create' && (
@@ -142,18 +150,19 @@ export default function AIStudioScreen() {
 
 const getStyles = (COLORS: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  customHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn: { padding: 4, marginLeft: -4 },
-  headerTitle: { color: COLORS.textPrimary, fontSize: 20, fontWeight: '800' },
-  creditBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, gap: 6 },
-  creditText: { color: COLORS.gold, fontSize: 14, fontWeight: '700' },
+  customHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
+  studioLabel: { color: COLORS.gold, fontSize: 11, fontWeight: '800', letterSpacing: 2, marginBottom: 4 },
+  headerTitle: { color: COLORS.textPrimary, fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
+  creditBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, gap: 6, borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)', overflow: 'hidden' },
+  creditText: { color: COLORS.gold, fontSize: 13, fontWeight: '800' },
   
-  tabContainer: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingBottom: 8, paddingTop: 4 },
-  tabScroll: { paddingHorizontal: 16, gap: 6 },
-  tab: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: 'transparent' },
-  activeTab: { borderColor: 'rgba(212, 175, 55, 0.3)' },
-  tabText: { color: COLORS.textSecondary, fontWeight: '600', fontSize: 14 },
-  activeTabText: { color: COLORS.gold, fontWeight: '800' },
+  tabContainer: { paddingHorizontal: 16, marginBottom: 12, zIndex: 10 },
+  glassTabs: { borderRadius: 30, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(0,0,0,0.4)' },
+  tabScroll: { paddingHorizontal: 6, paddingVertical: 6, gap: 4 },
+  tab: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24 },
+  activeTab: { backgroundColor: 'transparent' },
+  tabText: { color: COLORS.textSecondary, fontWeight: '600', fontSize: 14, letterSpacing: 0.5 },
+  activeTabText: { color: COLORS.gold, fontWeight: '800', textShadowColor: 'rgba(212,175,55,0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 },
   
   content: { flex: 1 },
 });

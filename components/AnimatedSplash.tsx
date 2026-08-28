@@ -17,9 +17,14 @@ export default function AnimatedSplash({ isReady }: Props) {
   const scale = useRef(new Animated.Value(1)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
   const textTranslateY = useRef(new Animated.Value(30)).current;
+  
+  // Custom Icon Animations
+  const bar1 = useRef(new Animated.Value(0.3)).current;
+  const bar2 = useRef(new Animated.Value(0.3)).current;
+  const bar3 = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
-    // Premium entrance: Smoothly slide up and fade in the words
+    // Entrance text
     Animated.parallel([
       Animated.timing(textOpacity, {
         toValue: 1,
@@ -34,6 +39,20 @@ export default function AnimatedSplash({ isReady }: Props) {
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Pulse the soundwave logo continuously
+    const animateBar = (anim: Animated.Value, delay: number) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, { toValue: 1, duration: 400, delay, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0.3, duration: 400, useNativeDriver: true })
+        ])
+      ).start();
+    };
+    
+    animateBar(bar1, 0);
+    animateBar(bar2, 150);
+    animateBar(bar3, 300);
   }, []);
 
   useEffect(() => {
@@ -55,7 +74,7 @@ export default function AnimatedSplash({ isReady }: Props) {
         ]).start(() => {
           setIsAnimationComplete(true);
         });
-      }, 1500); 
+      }, 2000); 
     }
   }, [isReady]);
 
@@ -64,8 +83,16 @@ export default function AnimatedSplash({ isReady }: Props) {
   return (
     <Animated.View style={[styles.container, { opacity: containerOpacity }]}>
       <Animated.View style={[styles.content, { transform: [{ scale }] }]}>
+        
+        {/* Custom Animated Logo */}
+        <View style={styles.logoContainer}>
+          <Animated.View style={[styles.bar, { backgroundColor: '#00C6FF', transform: [{ scaleY: bar1 }] }]} />
+          <Animated.View style={[styles.bar, { backgroundColor: '#B829EA', transform: [{ scaleY: bar2 }] }]} />
+          <Animated.View style={[styles.bar, { backgroundColor: '#FF3B6A', transform: [{ scaleY: bar3 }] }]} />
+        </View>
+
         <Animated.Text style={[styles.title, { opacity: textOpacity, transform: [{ translateY: textTranslateY }] }]}>
-          Bongo Streaming
+          Bongo Stream
         </Animated.Text>
         <Animated.Text style={[styles.subtitle, { opacity: textOpacity, transform: [{ translateY: textTranslateY }] }]}>
           Tanzania's Music Platform
@@ -88,19 +115,33 @@ const getStyles = (COLORS: any) => StyleSheet.create({
   content: {
     alignItems: 'center',
   },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 80,
+    gap: 8,
+    marginBottom: 24,
+  },
+  bar: {
+    width: 16,
+    height: 80,
+    borderRadius: 8,
+    shadowColor: '#B829EA',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 15,
+  },
   title: {
-    color: COLORS.gold,
+    color: '#FFFFFF',
     fontSize: 42,
     fontWeight: '900',
     fontStyle: 'italic',
     letterSpacing: -1.5,
     marginBottom: 4,
-    textShadowColor: COLORS.gold + '80',
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 12,
   },
   subtitle: {
-    color: '#FFFFFF',
+    color: '#00C6FF',
     fontSize: 12,
     fontWeight: '800',
     textTransform: 'uppercase',

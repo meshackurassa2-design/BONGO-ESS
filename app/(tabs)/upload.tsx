@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, ActivityIndicator
@@ -54,6 +54,16 @@ export default function UploadScreen() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState('');
+  const [dbGenres, setDbGenres] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchGenres = async () => {
+      const { data } = await supabase.from('genres').select('*').order('created_at', { ascending: true });
+      if (data && data.length > 0) setDbGenres(data);
+      else setDbGenres(GENRES);
+    };
+    fetchGenres();
+  }, []);
 
   if (!session) {
     return (
@@ -318,20 +328,26 @@ export default function UploadScreen() {
 
       {/* Genre picker (Shared) */}
       <Text style={styles.fieldLabel}>Music Genre</Text>
-      <TouchableOpacity style={styles.genreSelector} onPress={() => setShowGenrePicker(!showGenrePicker)}>
-        <Text style={styles.genreValue}>{GENRES.find(g => g.name === selectedGenre)?.emoji} {selectedGenre}</Text>
-        <Ionicons name={showGenrePicker ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.textSecondary} />
+      <TouchableOpacity style={styles.genreSelector} onPress={() => setShowGenrePicker(true)}>
+        <Text style={styles.genreLabel}>Select Genre</Text>
+        <Text style={styles.genreValue}>
+          {dbGenres.find(g => (g.name || g.id) === selectedGenre)?.icon ? <Ionicons name={dbGenres.find(g => (g.name || g.id) === selectedGenre)?.icon as any} size={14} /> : null} {selectedGenre}
+        </Text>
+        <Ionicons name="chevron-down" size={20} color={COLORS.textTertiary} />
       </TouchableOpacity>
+
       {showGenrePicker && (
-        <View style={styles.genreDropdown}>
-          {GENRES.map(g => (
-            <TouchableOpacity
-              key={g.name}
-              style={[styles.genreOption, selectedGenre === g.name && styles.genreOptionSelected]}
-              onPress={() => { setSelectedGenre(g.name); setShowGenrePicker(false); }}
+        <View style={styles.genrePicker}>
+          {dbGenres.map(g => (
+            <TouchableOpacity 
+              key={g.name || g.id} 
+              style={[styles.genreOption, selectedGenre === (g.name || g.id) && styles.genreOptionSelected]}
+              onPress={() => {
+                setSelectedGenre(g.name || g.id);
+                setShowGenrePicker(false);
+              }}
             >
-              <Text style={styles.genreOptionText}>{g.emoji} {g.name}</Text>
-              {selectedGenre === g.name && <Ionicons name="checkmark" size={16} color={COLORS.gold} />}
+              <Text style={styles.genreOptionText}>{(g.name || g.id)}</Text>
             </TouchableOpacity>
           ))}
         </View>

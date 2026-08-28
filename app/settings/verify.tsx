@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
@@ -80,18 +82,28 @@ export default function VerifyScreen() {
   if (fetching) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: 'Get Verified', headerShown: true, headerStyle: { backgroundColor: COLORS.black }, headerTintColor: COLORS.gold, }} />
+      <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+        <Stack.Screen options={{ title: 'Get Verified', headerShown: true, headerTransparent: true, headerTintColor: COLORS.gold, }} />
         <ActivityIndicator color={COLORS.gold} size="large" />
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView style={styles.container} contentContainerStyle={{ padding: 24, paddingBottom: 50 }}>
-        <Stack.Screen options={{ title: 'Get Verified', headerShown: true, headerStyle: { backgroundColor: COLORS.black }, headerTintColor: COLORS.gold, }} />
-        
-        <View style={styles.headerArea}>
+    <BlurView intensity={70} tint="dark" style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 60, paddingBottom: 12 }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ padding: 4, marginLeft: -4 }}>
+            <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={{ color: COLORS.textPrimary, fontSize: 18, fontWeight: '700' }}>Get Verified</Text>
+          <View style={{ width: 28 }} />
+        </View>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView style={styles.container} contentContainerStyle={{ padding: 24, paddingBottom: 50 }}>
+          
+          <View style={styles.headerArea}>
           <Ionicons name="checkmark-circle" size={80} color={COLORS.gold} />
           <Text style={styles.title}>Artist Verification</Text>
           <Text style={styles.subtitle}>
@@ -165,8 +177,10 @@ export default function VerifyScreen() {
             </TouchableOpacity>
           </View>
         )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      </SafeAreaView>
+    </BlurView>
   );
 }
 
@@ -186,8 +200,8 @@ function ReqItem({ met, text }: { met: boolean; text: string }) {
 }
 
 const getStyles = (COLORS: any) => StyleSheet.create({
-  center: { flex: 1, backgroundColor: COLORS.black, justifyContent: 'center', alignItems: 'center' },
-  container: { flex: 1, backgroundColor: COLORS.black },
+  center: { flex: 1, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: 'transparent' },
   headerArea: { alignItems: 'center', marginBottom: 40, marginTop: 20 },
   title: { color: COLORS.textPrimary, fontSize: 24, fontWeight: '800', marginTop: 16, marginBottom: 8 },
   subtitle: { color: COLORS.textSecondary, fontSize: 14, textAlign: 'center', lineHeight: 22, paddingHorizontal: 20 },

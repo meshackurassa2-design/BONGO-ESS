@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
+  StyleSheet, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Animated
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -19,6 +19,25 @@ export default function AuthScreen() {
   const enableOfflineMode = useAuthStore(s => s.enableOfflineMode);
 
   const [mode, setMode] = useState<'login' | 'signup'>('login');
+  
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.05,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        })
+      ])
+    ).start();
+  }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [verifyPassword, setVerifyPassword] = useState('');
@@ -67,11 +86,10 @@ export default function AuthScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <View style={styles.logoWrap}>
-          <Ionicons name="musical-notes" size={56} color={COLORS.gold} />
+        <View style={{ alignItems: 'center', marginBottom: 12 }}>
+          <Animated.Text style={[styles.appName, { transform: [{ scale: scaleAnim }] }]}>BONGO STREAM</Animated.Text>
+          <Text style={styles.tagline}>Muziki wa Tanzania</Text>
         </View>
-        <Text style={styles.appName}>BONGO STREAM</Text>
-        <Text style={styles.tagline}>Muziki wa Tanzania</Text>
 
         {/* Mode Toggle */}
         <View style={styles.modeToggle}>
@@ -208,7 +226,7 @@ function Field({ label, styles, COLORS, value, onChange, placeholder, icon, keyb
 
 const getStyles = (COLORS: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.black },
-  content: { padding: 24, paddingTop: 72, gap: 12 },
+  content: { padding: 24, flexGrow: 1, justifyContent: 'center', gap: 12 },
   logoWrap: { alignItems: 'center', marginBottom: 4 },
   appName: { color: COLORS.gold, fontSize: 28, fontWeight: '900', textAlign: 'center', letterSpacing: 3 },
   tagline: { color: COLORS.textSecondary, fontSize: 14, textAlign: 'center', marginBottom: 8 },

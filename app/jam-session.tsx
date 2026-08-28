@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { useJamStore } from '../store/jamStore';
 import { usePlayerStore } from '../store/playerStore';
+import GlassBackButton from '../components/GlassBackButton';
 
 const COLORS = {
   background: '#050505',
@@ -51,9 +52,7 @@ export default function JamSessionScreen() {
     return (
       <View style={{ flex: 1, paddingTop: 40, paddingHorizontal: 24 }}>
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-down" size={32} color={COLORS.textPrimary} />
-          </TouchableOpacity>
+          <GlassBackButton onPress={() => router.back()} />
           <Text style={styles.screenTitle}>{isHost ? 'Hosting Jam' : 'Joined Jam'}</Text>
           <View style={{ width: 40 }} />
         </View>
@@ -124,9 +123,7 @@ export default function JamSessionScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <View style={{ flex: 1, paddingTop: 40, paddingHorizontal: 24 }}>
           <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-              <Ionicons name="chevron-down" size={32} color={COLORS.textPrimary} />
-            </TouchableOpacity>
+            <GlassBackButton onPress={() => router.back()} />
             <View style={{ width: 40 }} />
           </View>
 

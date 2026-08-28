@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore, ThemeType } from '../../store/themeStore';
@@ -20,21 +22,17 @@ export default function ThemeSettingsScreen() {
   ];
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen 
-        options={{
-          title: 'App Theme',
-          headerStyle: { backgroundColor: COLORS.darkSurface },
-          headerTintColor: COLORS.textPrimary,
-          headerShadowVisible: false,
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={{ paddingRight: 20 }}>
-              <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-            </TouchableOpacity>
-          )
-        }} 
-      />
-      <ScrollView contentContainerStyle={styles.content}>
+    <BlurView intensity={70} tint="dark" style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 60, paddingBottom: 12 }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ padding: 4, marginLeft: -4 }}>
+            <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={{ color: COLORS.textPrimary, fontSize: 18, fontWeight: '700' }}>App Theme</Text>
+          <View style={{ width: 28 }} />
+        </View>
+        <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.headerText}>Choose your vibe.</Text>
         <Text style={styles.subText}>Select a theme to instantly change the look and feel of Bongo Stream.</Text>
 
@@ -73,13 +71,14 @@ export default function ThemeSettingsScreen() {
             );
           })}
         </View>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </SafeAreaView>
+    </BlurView>
   );
 }
 
 const getStyles = (COLORS: any) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.black },
+  container: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: 20, paddingTop: 80 },
   headerText: { color: COLORS.textPrimary, fontSize: 28, fontWeight: '800', marginBottom: 8 },
   subText: { color: COLORS.textSecondary, fontSize: 14, marginBottom: 32, lineHeight: 22 },

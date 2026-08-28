@@ -3,12 +3,14 @@
     "name": "Bongo Stream",
     "slug": "combongostreamapp",
     "backgroundColor": "#0A0A0F",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "scheme": "bongo-stream",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
       "backgroundColor": "#0A0A0F"
     },
     "assetBundlePatterns": [
@@ -26,10 +28,11 @@
     "android": {
       "backgroundColor": "#0A0A0F",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0A0A0F"
       },
       "package": "com.bongostream.app",
+      "versionCode": 2,
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
@@ -39,6 +42,10 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
         "android.permission.WAKE_LOCK"
+      ],
+      "blockedPermissions": [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO"
       ]
     },
     "web": {

@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import GlassBackButton from '../../components/GlassBackButton';
 
 export default function LiveRoomScreen() {
   const { id } = useLocalSearchParams();
@@ -117,9 +118,7 @@ export default function LiveRoomScreen() {
         <LinearGradient colors={['rgba(0,0,0,0.5)', COLORS.black]} style={StyleSheet.absoluteFillObject} />
         
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-down" size={32} color="#fff" />
-          </TouchableOpacity>
+          <GlassBackButton onPress={() => router.back()} />
           <View style={styles.liveBadge}>
             <View style={styles.pulseDot} />
             <Text style={styles.liveBadgeText}>{room.status === 'live' ? 'LIVE' : 'WAITING'}</Text>

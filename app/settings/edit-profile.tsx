@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
@@ -72,10 +74,19 @@ export default function EditProfileSettings() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
-      <Stack.Screen options={{ title: t('profile.edit_profile'), headerShown: true, headerStyle: { backgroundColor: COLORS.black }, headerTintColor: COLORS.gold, headerBackTitle: ' ' }} />
-      
-      <View style={{ alignItems: 'center', marginVertical: 20 }}>
+    <BlurView intensity={70} tint="dark" style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 60, paddingBottom: 12 }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ padding: 4, marginLeft: -4 }}>
+            <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={{ color: COLORS.textPrimary, fontSize: 18, fontWeight: '700' }}>{t('profile.edit_profile')}</Text>
+          <View style={{ width: 28 }} />
+        </View>
+        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
+        
+        <View style={{ alignItems: 'center', marginVertical: 20 }}>
         <TouchableOpacity onPress={handlePickImage} disabled={saving}>
           {avatarUrl ? (
             <Image source={{ uri: avatarUrl }} style={{ width: 100, height: 100, borderRadius: 50 }} />
@@ -108,12 +119,14 @@ export default function EditProfileSettings() {
           <Text style={styles.upgradeBtnText}>Upgrade to Artist Account</Text>
         </TouchableOpacity>
       )}
-    </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
+    </BlurView>
   );
 }
 
 const getStyles = (COLORS: any) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.black, padding: 16 },
+  container: { flex: 1, backgroundColor: 'transparent', padding: 16 },
   label: { color: COLORS.textSecondary, fontSize: 13, marginBottom: 8, marginTop: 16 },
   input: { backgroundColor: COLORS.card, color: COLORS.textPrimary, borderRadius: 12, padding: 14, fontSize: 15 },
   saveBtn: { backgroundColor: COLORS.gold, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 32 },

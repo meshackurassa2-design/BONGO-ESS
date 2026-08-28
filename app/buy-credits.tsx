@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
@@ -109,7 +110,7 @@ export default function BuyCreditsScreen() {
         if (session.user.id) fetchProfile(session.user.id);
         Alert.alert("Success!", `We found and recovered ${recovered} missing payment(s)! Your credits have been updated.`);
       } else {
-        Alert.alert("Status", "We checked your pending payments but none of them have been successfully completed on ClickPesa yet.");
+        Alert.alert("Status", "We checked your pending payments but none of them have been successfully completed yet.");
       }
       
     } catch (e: any) {
@@ -120,8 +121,9 @@ export default function BuyCreditsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <Stack.Screen options={{ headerShown: false }} />
+    <BlurView intensity={70} tint="dark" style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <Stack.Screen options={{ headerShown: false }} />
       
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -132,9 +134,9 @@ export default function BuyCreditsScreen() {
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           
-          <View style={styles.balanceCard}>
+          <BlurView intensity={30} tint="dark" style={styles.balanceCard}>
             <Ionicons name="diamond" size={32} color={COLORS.gold} />
             <Text style={styles.balanceTitle}>Current Balance</Text>
             <Text style={styles.balanceAmount}>{profile?.credits || 0} Credits</Text>
@@ -161,9 +163,9 @@ export default function BuyCreditsScreen() {
                 <Text style={[styles.verifyText, { color: COLORS.gold }]}>Claim Free Credit (Gift)</Text>
               </TouchableOpacity>
             )}
-          </View>
+          </BlurView>
 
-          <View style={styles.packageCard}>
+          <BlurView intensity={30} tint="dark" style={styles.packageCard}>
             <View style={styles.packageHeader}>
               <Text style={styles.packageTitle}>Need more credits?</Text>
             </View>
@@ -216,38 +218,39 @@ export default function BuyCreditsScreen() {
 
             <View style={styles.secureWrap}>
               <Ionicons name="lock-closed" size={14} color={COLORS.textTertiary} />
-              <Text style={styles.secureText}>Secured by ClickPesa</Text>
+              <Text style={styles.secureText}>Secure Payment</Text>
             </View>
-          </View>
+          </BlurView>
           
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </BlurView>
   );
 }
 
 const getStyles = (COLORS: any) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 60, paddingBottom: 12 },
   backBtn: { padding: 4, marginLeft: -4 },
   headerTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '700' },
   content: { padding: 16 },
-  balanceCard: { alignItems: 'center', backgroundColor: COLORS.card, padding: 24, borderRadius: 16, marginBottom: 24 },
+  balanceCard: { alignItems: 'center', padding: 24, borderRadius: 16, marginBottom: 24, overflow: 'hidden' },
   balanceTitle: { color: COLORS.textSecondary, fontSize: 14, marginTop: 12, marginBottom: 4 },
   balanceAmount: { color: COLORS.textPrimary, fontSize: 28, fontWeight: '900' },
-  packageCard: { backgroundColor: COLORS.card, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: COLORS.gold + '40' },
+  packageCard: { borderRadius: 16, padding: 20, overflow: 'hidden' },
   packageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   packageTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '700' },
   packagePrice: { color: COLORS.gold, fontSize: 18, fontWeight: '900' },
   packageDesc: { color: COLORS.textSecondary, fontSize: 14, lineHeight: 20 },
-  divider: { height: 1, backgroundColor: COLORS.divider, marginVertical: 20 },
+  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 20 },
   label: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 12 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.cardAlt, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, gap: 10 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, gap: 10 },
   input: { flex: 1, color: COLORS.textPrimary, fontSize: 16 },
   payBtn: { backgroundColor: COLORS.gold, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 20 },
   payBtnText: { color: COLORS.black, fontSize: 16, fontWeight: '800' },
   secureWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16 },
   secureText: { color: COLORS.textTertiary, fontSize: 12 },
-  verifyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: COLORS.background, borderRadius: 20 },
+  verifyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 20 },
   verifyText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '600' }
 });

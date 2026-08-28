@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import { LogBox, Alert } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
+import * as ScreenCapture from 'expo-screen-capture';
 
 // Keep the native splash screen visible until we are ready — this PREVENTS the white flash
-SplashScreen.preventAutoHideAsync().catch(() => {});
+try {
+  SplashScreen.preventAutoHideAsync().catch(() => {});
+} catch (e) {}
 
 const originalHandler = global.ErrorUtils?.getGlobalHandler?.();
 if (global.ErrorUtils) {
@@ -26,8 +29,8 @@ import ThemeEffects from '../components/ThemeEffects';
 import { useFonts, Outfit_400Regular, Outfit_600SemiBold, Outfit_700Bold, Outfit_800ExtraBold, Outfit_900Black } from '@expo-google-fonts/outfit';
 import '../i18n';
 
-// Ignore harmless background Supabase auth network errors in dev mode
-LogBox.ignoreLogs(['TypeError: Network request failed']);
+// Ignore harmless background Supabase auth network errors and Expo Go splash screen fast-refresh warnings in dev mode
+LogBox.ignoreLogs(['TypeError: Network request failed', 'No native splash screen registered']);
 
 const customTheme = {
   ...DarkTheme,
@@ -52,24 +55,39 @@ export default function RootLayout() {
 
   useEffect(() => {
     useAuthStore.getState().init();
+    
+    // Force allow screenshots globally in case the native flag is stuck from hot-reloading
+    try {
+      ScreenCapture.allowScreenCaptureAsync().catch(() => {});
+    } catch (e) {}
   }, []);
 
   useEffect(() => {
     // Hide the NATIVE splash screen only once fonts are loaded and auth has resolved.
     // This is the real fix — the native splash stays dark until we're ready.
     if (fontsLoaded && !isLoading) {
-      SplashScreen.hideAsync().catch(() => {});
+      setTimeout(async () => {
+        try {
+          await SplashScreen.hideAsync();
+        } catch (e) {
+          // Ignore error if splash screen is already hidden (e.g., during fast refresh)
+        }
+      }, 100);
     }
   }, [fontsLoaded, isLoading]);
 
   useEffect(() => {
     if (isLoading) return;
     const inAuthGroup = segments[0] === 'auth';
-    if (!session && !inAuthGroup && !isOfflineMode) {
-      router.replace('/auth');
-    } else if ((session || isOfflineMode) && inAuthGroup) {
-      router.replace('/');
-    }
+    
+    // Defer the routing to ensure the navigation container is fully mounted
+    setTimeout(() => {
+      if (!session && !inAuthGroup && !isOfflineMode) {
+        router.replace('/auth');
+      } else if ((session || isOfflineMode) && inAuthGroup) {
+        router.replace('/');
+      }
+    }, 0);
   }, [session, isLoading, segments, isOfflineMode]);
 
   return (
@@ -81,8 +99,19 @@ export default function RootLayout() {
           <Stack.Screen name="auth" />
           <Stack.Screen name="track/[id]" options={{ presentation: 'modal' }} />
           <Stack.Screen name="player" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="buy-credits" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="buy-credits" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
+          <Stack.Screen name="settings/theme" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
+          <Stack.Screen name="settings/pair-partner" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
+          <Stack.Screen name="settings/edit-profile" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
+          <Stack.Screen name="settings/verify" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
+          <Stack.Screen name="settings/support" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
+          <Stack.Screen name="settings/become-artist" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
+          <Stack.Screen name="settings/language" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
+          <Stack.Screen name="settings/notifications" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
+          <Stack.Screen name="settings/about" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
+          <Stack.Screen name="artist/dashboard" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
           <Stack.Screen name="artist/[id]" />
+          <Stack.Screen name="playlist/[id]" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
           <Stack.Screen name="genre/[name]" />
         </Stack>
         <AnimatedSplash isReady={fontsLoaded && !isLoading} />

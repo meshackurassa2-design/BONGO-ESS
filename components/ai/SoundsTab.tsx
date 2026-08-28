@@ -81,7 +81,7 @@ export default function SoundsTab({ onGenerateSuccess }: SoundsTabProps) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
       {(profile?.credits || 0) <= 2 && (
         <TouchableOpacity style={styles.lowCreditBanner} onPress={() => router.push('/buy-credits')}>
           <LinearGradient colors={['#FF3B30', '#FF9500']} start={{x: 0, y: 0}} end={{x: 1, y: 0}} style={[StyleSheet.absoluteFill, { borderRadius: 16 }]} />
@@ -161,34 +161,32 @@ export default function SoundsTab({ onGenerateSuccess }: SoundsTabProps) {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.buyCreditsInlineBtn} onPress={() => router.push('/buy-credits')}>
-        <Ionicons name="diamond" size={16} color={COLORS.gold} />
-        <Text style={styles.buyCreditsInlineText}>Get More Credits</Text>
-      </TouchableOpacity>
+      
     </ScrollView>
   );
 }
 
 const getStyles = (COLORS: any) => StyleSheet.create({
   container: { flex: 1 },
-  label: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '700', marginBottom: 8, marginTop: 16 },
-  input: { backgroundColor: 'rgba(255,255,255,0.05)', color: COLORS.textPrimary, padding: 16, borderRadius: 16, fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  label: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 24, letterSpacing: 0.5, textTransform: 'uppercase' },
+  input: { backgroundColor: 'rgba(255,255,255,0.03)', color: COLORS.textPrimary, padding: 16, borderRadius: 16, fontSize: 15, borderWidth: 1, borderColor: 'rgba(212,175,55,0.1)' },
   textArea: { height: 140 },
   
-  switchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', padding: 16, borderRadius: 16, marginTop: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  switchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: 16, borderRadius: 16, marginTop: 16, borderWidth: 1, borderColor: 'rgba(212,175,55,0.1)' },
   switchLabel: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '700', marginBottom: 2 },
   switchSub: { color: COLORS.textTertiary, fontSize: 12 },
   
-  advancedToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.05)', padding: 16, borderRadius: 16, marginTop: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  advancedToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.02)', padding: 16, borderRadius: 16, marginTop: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   advancedToggleText: { color: COLORS.gold, fontSize: 15, fontWeight: '700' },
-  advancedContainer: { backgroundColor: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 16, marginTop: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  advancedContainer: { backgroundColor: 'rgba(0,0,0,0.3)', padding: 16, borderRadius: 16, marginTop: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.02)' },
   
   lowCreditBanner: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, marginBottom: 20, overflow: 'hidden' },
   lowCreditTitle: { color: COLORS.black, fontSize: 16, fontWeight: '800', marginBottom: 2 },
   lowCreditSub: { color: COLORS.black, fontSize: 13, fontWeight: '600' },
   
-  generateBtn: { paddingVertical: 18, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginTop: 32, marginBottom: 16, overflow: 'hidden' },
-  generateBtnText: { color: COLORS.black, fontSize: 16, fontWeight: '800' },
+  generateBtn: { paddingVertical: 20, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginTop: 32, marginBottom: 40, overflow: 'hidden', shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 10 },
+  generateBtnText: { color: COLORS.black, fontSize: 18, fontWeight: '900', letterSpacing: 0.5 },
   buyCreditsInlineBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', paddingVertical: 16, borderRadius: 30, marginBottom: 40, gap: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   buyCreditsInlineText: { color: COLORS.gold, fontSize: 15, fontWeight: '700' },
 });
+

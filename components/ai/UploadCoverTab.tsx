@@ -110,7 +110,7 @@ export default function UploadCoverTab({ onGenerateSuccess, openLyricsModal }: U
   const [showInfo, setShowInfo] = useState(true);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
       {showInfo && (
         <View style={styles.infoBanner}>
           <Ionicons name="information-circle" size={24} color={COLORS.gold} />
@@ -205,17 +205,17 @@ const getStyles = (COLORS: any) => StyleSheet.create({
   container: { flex: 1 },
   infoBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(212, 175, 55, 0.1)', padding: 16, borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(212, 175, 55, 0.2)' },
   infoText: { color: COLORS.gold, fontSize: 13, lineHeight: 20, flex: 1, marginLeft: 12, fontWeight: '500' },
-  label: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '700', marginBottom: 8, marginTop: 16 },
-  input: { backgroundColor: 'rgba(255,255,255,0.05)', color: COLORS.textPrimary, padding: 16, borderRadius: 16, fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  uploadBtn: { backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  label: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 24, letterSpacing: 0.5, textTransform: 'uppercase' },
+  input: { backgroundColor: 'rgba(255,255,255,0.03)', color: COLORS.textPrimary, padding: 16, borderRadius: 16, fontSize: 15, borderWidth: 1, borderColor: 'rgba(212,175,55,0.1)' },
+  uploadBtn: { backgroundColor: 'rgba(255,255,255,0.03)', paddingHorizontal: 16, paddingVertical: 14, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: 'rgba(212,175,55,0.1)' },
   uploadBtnText: { color: COLORS.gold, fontWeight: '700', fontSize: 14 },
-  errorBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 59, 48, 0.1)', padding: 16, borderRadius: 12, gap: 12, borderWidth: 1, borderColor: 'rgba(255, 59, 48, 0.2)' },
+  errorBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 59, 48, 0.1)', padding: 16, borderRadius: 16, gap: 12, borderWidth: 1, borderColor: 'rgba(255, 59, 48, 0.2)' },
   
-  personaCard: { backgroundColor: 'rgba(255,255,255,0.05)', padding: 16, borderRadius: 16, width: 220, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginRight: 16 },
-  personaCardActive: { borderColor: COLORS.gold, backgroundColor: 'rgba(212, 175, 55, 0.1)' },
+  personaCard: { backgroundColor: 'rgba(255,255,255,0.03)', padding: 16, borderRadius: 20, width: 220, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginRight: 16 },
+  personaCardActive: { borderColor: COLORS.gold, backgroundColor: 'rgba(212, 175, 55, 0.15)', shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
   personaName: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '800', marginBottom: 6 },
   personaDesc: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 20 },
   
-  generateBtn: { paddingVertical: 18, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginTop: 32, marginBottom: 40, overflow: 'hidden' },
-  generateBtnText: { color: COLORS.black, fontSize: 16, fontWeight: '800' },
+  generateBtn: { paddingVertical: 20, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginTop: 32, marginBottom: 40, overflow: 'hidden', shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 10 },
+  generateBtnText: { color: COLORS.black, fontSize: 18, fontWeight: '900', letterSpacing: 0.5 },
 });

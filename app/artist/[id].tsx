@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Dimensions, Animated, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { supabase } from '../../lib/supabase';
 import { useThemeStore } from '../../store/themeStore';
 import { Track } from '../../constants';
@@ -25,6 +26,8 @@ export default function ArtistScreen() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
+  
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (id) loadData();
@@ -89,32 +92,69 @@ export default function ArtistScreen() {
   if (loading) return <View style={styles.loader}><ActivityIndicator color="#1DB954" size="large" /></View>;
   if (!artist) return <View style={styles.loader}><Text style={{color: '#fff'}}>Artist not found</Text></View>;
 
+  const headerHeight = width * 1.1;
+
+  const imageScale = scrollY.interpolate({
+    inputRange: [-100, 0, headerHeight],
+    outputRange: [1.5, 1, 1],
+    extrapolate: 'clamp',
+  });
+  
+  const imageTranslateY = scrollY.interpolate({
+    inputRange: [0, headerHeight],
+    outputRange: [0, -headerHeight / 2],
+    extrapolate: 'clamp',
+  });
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [headerHeight - 120, headerHeight - 60],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
   return (
     <View style={styles.container}>
+      {/* Parallax Hero Image */}
+      <Animated.View style={[styles.parallaxHeader, { height: headerHeight, transform: [{ scale: imageScale }, { translateY: imageTranslateY }] }]}>
+        {artist.avatar_url ? (
+          <Image source={{ uri: artist.avatar_url }} style={StyleSheet.absoluteFill} contentFit="cover" />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: '#333' }]} />
+        )}
+        <LinearGradient 
+          colors={['transparent', 'rgba(0,0,0,0.6)', COLORS.black]} 
+          locations={[0.3, 0.7, 1]} 
+          style={StyleSheet.absoluteFill} 
+        />
+      </Animated.View>
+
+      {/* Sticky Top Nav */}
+      <Animated.View style={[styles.stickyNav, { opacity: headerOpacity }]}>
+        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+        <Text style={styles.stickyNavTitle} numberOfLines={1}>{artist.display_name}</Text>
+      </Animated.View>
+
       {/* Absolute Back Button */}
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Ionicons name="arrow-back" size={28} color="#fff" />
+        <BlurView intensity={40} tint="dark" style={styles.iconBtnBlur}>
+          <Ionicons name="chevron-back" size={28} color="#fff" />
+        </BlurView>
       </TouchableOpacity>
 
-      <FlatList 
+      <Animated.FlatList 
         showsVerticalScrollIndicator={false}
         data={tracks}
         keyExtractor={t => t.id}
-        contentContainerStyle={{ paddingBottom: 160 }}
+        contentContainerStyle={{ paddingTop: headerHeight - 140, paddingBottom: 160 }}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        scrollEventThrottle={16}
         ListHeaderComponent={
           <View>
-            {/* Hero Image Section */}
             <View style={styles.heroContainer}>
-              {artist.avatar_url ? (
-                <Image source={{ uri: artist.avatar_url }} style={StyleSheet.absoluteFill} contentFit="cover" />
-              ) : (
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#333' }]} />
-              )}
-              <LinearGradient 
-                colors={['transparent', 'rgba(0,0,0,0.6)', COLORS.black]} 
-                locations={[0.3, 0.7, 1]} 
-                style={StyleSheet.absoluteFill} 
-              />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                {artist.is_verified && <Ionicons name="checkmark-circle" size={24} color="#1DB954" />}
+                {artist.is_verified && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>Verified Artist</Text>}
+              </View>
               <Text style={styles.heroName} numberOfLines={2}>{artist.display_name}</Text>
             </View>
 
@@ -179,32 +219,40 @@ const getStyles = (COLORS: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.black },
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.black },
   
+  parallaxHeader: { position: 'absolute', top: 0, left: 0, right: 0 },
+  stickyNav: { position: 'absolute', top: 0, left: 0, right: 0, height: Platform.OS === 'ios' ? 100 : 80, zIndex: 10, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 16 },
+  stickyNavTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  
   backButton: { 
     position: 'absolute', 
-    top: 50, 
+    top: Platform.OS === 'ios' ? 50 : 30, 
     left: 16, 
-    zIndex: 10,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 20
+  },
+  iconBtnBlur: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center'
   },
 
   heroContainer: { 
     width: '100%', 
-    height: width * 1.1, // Tall hero image (e.g. width=400, height=440)
     justifyContent: 'flex-end',
     paddingHorizontal: 16,
     paddingBottom: 16
   },
   heroName: { 
     color: '#FFF', 
-    fontSize: 56, 
+    fontSize: 64, 
     fontWeight: '900', 
     letterSpacing: -2,
-    lineHeight: 60
+    lineHeight: 70,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 10
   },
 
   contentPadding: { paddingHorizontal: 16 },

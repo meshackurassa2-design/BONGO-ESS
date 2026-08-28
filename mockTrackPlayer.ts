@@ -52,6 +52,7 @@ export const Capability = {
 export const IOSCategory = { Playback: 'playback', Ambient: 'ambient', SoloAmbient: 'soloAmbient' };
 export const IOSCategoryMode = { Default: 'default' };
 export const IOSCategoryOptions = { MixWithOthers: 'mixWithOthers', DuckOthers: 'duckOthers', AllowBluetooth: 'allowBluetooth', AllowBluetoothA2DP: 'allowBluetoothA2DP' };
+export const PitchAlgorithm = { Linear: 'linear', Music: 'music', Voice: 'voice' };
 export default {
   setupPlayer: async () => {},
   updateOptions: async () => {},

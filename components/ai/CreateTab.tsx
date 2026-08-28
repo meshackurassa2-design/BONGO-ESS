@@ -104,8 +104,22 @@ export default function CreateTab({ onGenerateSuccess, openLyricsModal }: Create
       
       onGenerateSuccess();
     } catch (e: any) {
-      Alert.alert("Error", "Failed to generate song. Your credit has been refunded. (" + e.message + ")");
-      // Refund credits since generation failed
+      // 1. Tell user to try later
+      Alert.alert("Notice", "The AI studio is currently busy. Please try again later. Your credit has been refunded.");
+      
+      // 2. Notify admin (log to database)
+      try {
+        await supabase.from('admin_error_logs').insert({
+          error_message: e.message || 'Unknown error',
+          user_id: profile?.id,
+          context: 'AI Music Generation (CreateTab)',
+          created_at: new Date().toISOString()
+        });
+      } catch (logErr) {
+        console.error("Failed to log admin error", logErr);
+      }
+
+      // 3. Refund credits since generation failed
       try {
         const { error: refundError } = await supabase.rpc('deduct_credits', { user_id: profile?.id, amount: -requiredCredits });
         if (refundError) {
@@ -126,7 +140,7 @@ export default function CreateTab({ onGenerateSuccess, openLyricsModal }: Create
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
+      <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
       {(profile?.credits || 0) <= 2 && (
         <TouchableOpacity style={styles.lowCreditBanner} onPress={() => router.push('/buy-credits')}>
           <LinearGradient colors={['#FF3B30', '#FF9500']} start={{x: 0, y: 0}} end={{x: 1, y: 0}} style={[StyleSheet.absoluteFill, { borderRadius: 16 }]} />
@@ -139,12 +153,12 @@ export default function CreateTab({ onGenerateSuccess, openLyricsModal }: Create
       )}
 
       <Text style={styles.label}>Song Title</Text>
-      <View style={[styles.inputRow, missingFields.includes('title') && { borderColor: '#FF3B30', borderWidth: 1 }]}>
+      <View style={[styles.inputRow, missingFields.includes('title') && { borderColor: '#FF3B30' }]}>
         <Ionicons name="text-outline" size={20} color={COLORS.gold} />
         <TextInput style={styles.input} placeholder="e.g. Midnight Memories" placeholderTextColor={COLORS.textTertiary} value={title} onChangeText={(t) => { setTitle(t); setMissingFields(m => m.filter(f => f !== 'title')); }} />
       </View>
       
-      <View style={[styles.inputRow, { marginTop: 16 }, missingFields.includes('style') && { borderColor: '#FF3B30', borderWidth: 1 }]}>
+      <View style={[styles.inputRow, { marginTop: 16 }, missingFields.includes('style') && { borderColor: '#FF3B30' }]}>
         <Ionicons name="musical-notes-outline" size={20} color={COLORS.gold} />
         <TextInput style={styles.input} placeholder="e.g. Acoustic pop, upbeat" placeholderTextColor={COLORS.textTertiary} value={style} onChangeText={(t) => { setStyle(t); setMissingFields(m => m.filter(f => f !== 'style')); }} />
       </View>
@@ -168,7 +182,7 @@ export default function CreateTab({ onGenerateSuccess, openLyricsModal }: Create
         ))}
       </ScrollView>
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, marginBottom: 8 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Text style={[styles.label, { marginTop: 0, marginBottom: 0, marginRight: 8 }]}>Lyrics</Text>
           <TouchableOpacity onPress={() => setIsLyricsFullscreen(true)} style={{ padding: 6, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12 }}>
@@ -176,13 +190,13 @@ export default function CreateTab({ onGenerateSuccess, openLyricsModal }: Create
           </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.autoWriteBtn} onPress={() => openLyricsModal(setLyrics)}>
-          <LinearGradient colors={[COLORS.gold, '#FFD700']} start={{x: 0, y: 0}} end={{x: 1, y: 1}} style={[StyleSheet.absoluteFill, { borderRadius: 16 }]} />
+          <LinearGradient colors={['#FFD700', '#D4AF37', '#B8860B']} start={{x: 0, y: 0}} end={{x: 1, y: 1}} style={[StyleSheet.absoluteFill, { borderRadius: 16, opacity: 0.9 }]} />
           <Ionicons name="sparkles" size={14} color={COLORS.black} />
           <Text style={styles.autoWriteText}>Auto-Write AI (Free)</Text>
         </TouchableOpacity>
       </View>
       
-      <TextInput style={[styles.input, styles.textArea, missingFields.includes('lyrics') && { borderColor: '#FF3B30', borderWidth: 1 }]} placeholder="Write your verses and chorus here..." placeholderTextColor={COLORS.textTertiary} value={lyrics} onChangeText={(t) => { setLyrics(t); setMissingFields(m => m.filter(f => f !== 'lyrics')); }} multiline textAlignVertical="top" />
+      <TextInput style={[styles.input, styles.textArea, missingFields.includes('lyrics') && { borderColor: '#FF3B30' }]} placeholder="Write your verses and chorus here..." placeholderTextColor={COLORS.textTertiary} value={lyrics} onChangeText={(t) => { setLyrics(t); setMissingFields(m => m.filter(f => f !== 'lyrics')); }} multiline textAlignVertical="top" />
 
       <TouchableOpacity style={styles.advancedToggle} onPress={() => setShowAdvanced(!showAdvanced)} activeOpacity={0.7}>
         <Text style={styles.advancedToggleText}>Advanced Options</Text>
@@ -273,10 +287,7 @@ export default function CreateTab({ onGenerateSuccess, openLyricsModal }: Create
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.buyCreditsInlineBtn} onPress={() => router.push('/buy-credits')}>
-        <Ionicons name="diamond" size={16} color={COLORS.gold} />
-        <Text style={styles.buyCreditsInlineText}>Get More Credits</Text>
-      </TouchableOpacity>
+      
     </ScrollView>
 
       {/* Fullscreen Lyrics Input Modal */}
@@ -308,15 +319,15 @@ export default function CreateTab({ onGenerateSuccess, openLyricsModal }: Create
 
 const getStyles = (COLORS: any) => StyleSheet.create({
   container: { flex: 1 },
-  label: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '700', marginBottom: 8, marginTop: 16 },
-  autoWriteBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, gap: 6, overflow: 'hidden' },
-  autoWriteText: { color: COLORS.black, fontSize: 12, fontWeight: '800' },
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  label: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 24, letterSpacing: 0.5, textTransform: 'uppercase' },
+  autoWriteBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16, gap: 6, overflow: 'hidden', shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
+  autoWriteText: { color: COLORS.black, fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(255,255,255,0.03)', paddingHorizontal: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(212,175,55,0.1)' },
   input: { flex: 1, color: COLORS.textPrimary, paddingVertical: 16, borderRadius: 16, fontSize: 15 },
-  textArea: { height: 180, backgroundColor: 'rgba(255,255,255,0.05)', padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  advancedToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.05)', padding: 16, borderRadius: 16, marginTop: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  textArea: { height: 180, backgroundColor: 'rgba(255,255,255,0.03)', padding: 16, borderWidth: 1, borderColor: 'rgba(212,175,55,0.1)' },
+  advancedToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.02)', padding: 16, borderRadius: 16, marginTop: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   advancedToggleText: { color: COLORS.gold, fontSize: 15, fontWeight: '700' },
-  advancedContainer: { backgroundColor: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 16, marginTop: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  advancedContainer: { backgroundColor: 'rgba(0,0,0,0.3)', padding: 16, borderRadius: 16, marginTop: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.02)' },
   
   lowCreditBanner: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, marginBottom: 20, overflow: 'hidden' },
   lowCreditTitle: { color: COLORS.black, fontSize: 16, fontWeight: '800', marginBottom: 2 },
@@ -332,19 +343,20 @@ const getStyles = (COLORS: any) => StyleSheet.create({
   personaDesc: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 20 },
   
   genderRow: { flexDirection: 'row', gap: 10 },
-  genderBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', borderWidth: 1, borderColor: 'transparent' },
-  genderBtnActive: { backgroundColor: 'rgba(212, 175, 55, 0.2)', borderColor: COLORS.gold },
-  genderText: { color: COLORS.textSecondary, fontWeight: '600' },
+  genderBtn: { flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  genderBtnActive: { backgroundColor: 'rgba(212, 175, 55, 0.15)', borderColor: COLORS.gold },
+  genderText: { color: COLORS.textSecondary, fontWeight: '700' },
   genderTextActive: { color: COLORS.gold },
   
-  generateBtn: { paddingVertical: 18, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginTop: 30, marginBottom: 40, overflow: 'hidden' },
-  generateBtnText: { color: COLORS.black, fontSize: 18, fontWeight: '800' },
+  generateBtn: { paddingVertical: 20, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginTop: 32, marginBottom: 40, overflow: 'hidden', shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 10 },
+  generateBtnText: { color: COLORS.black, fontSize: 18, fontWeight: '900', letterSpacing: 0.5 },
   
-  personaPill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.05)', marginRight: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  personaPillActive: { backgroundColor: COLORS.gold, borderColor: COLORS.gold },
+  personaPill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.03)', marginRight: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  personaPillActive: { backgroundColor: 'rgba(212, 175, 55, 0.15)', borderColor: COLORS.gold, shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
   personaPillText: { color: COLORS.textSecondary, fontSize: 14, fontWeight: '600' },
-  personaPillTextActive: { color: COLORS.black, fontWeight: '800' },
+  personaPillTextActive: { color: COLORS.gold, fontWeight: '800' },
 
   buyCreditsInlineBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', paddingVertical: 16, borderRadius: 30, marginBottom: 40, gap: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   buyCreditsInlineText: { color: COLORS.gold, fontSize: 15, fontWeight: '700' },
 });
+

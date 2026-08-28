@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Stack, useRouter } from 'expo-router';
 import { useThemeStore } from '../../store/themeStore';
 
@@ -13,10 +15,18 @@ export default function AboutSettings() {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen options={{ title: t('profile.about'), headerShown: true, headerStyle: { backgroundColor: COLORS.black }, headerTintColor: COLORS.gold }} />
-      
-      <View style={styles.header}>
+    <BlurView intensity={70} tint="dark" style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 60, paddingBottom: 12 }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ padding: 4, marginLeft: -4 }}>
+            <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={{ color: COLORS.textPrimary, fontSize: 18, fontWeight: '700' }}>{t('profile.about')}</Text>
+          <View style={{ width: 28 }} />
+        </View>
+        <ScrollView style={styles.container}>
+        <View style={styles.header}>
         <Ionicons name="musical-notes" size={60} color={COLORS.gold} />
         <Text style={styles.appName}>Bongo Stream</Text>
         <Text style={styles.version}>{t('settings.version')} 1.0.0</Text>
@@ -33,12 +43,14 @@ export default function AboutSettings() {
           <Text style={[styles.value, { color: COLORS.gold }]}>Read Terms & Conditions</Text>
         </TouchableOpacity>
       </View>
-    </View>
+        </ScrollView>
+      </SafeAreaView>
+    </BlurView>
   );
 }
 
 const getStyles = (COLORS: any) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.black, padding: 16 },
+  container: { flex: 1, backgroundColor: 'transparent', padding: 16 },
   header: { alignItems: 'center', marginVertical: 32 },
   appName: { color: COLORS.textPrimary, fontSize: 24, fontWeight: 'bold', marginTop: 12 },
   version: { color: COLORS.textSecondary, fontSize: 14, marginTop: 4 },

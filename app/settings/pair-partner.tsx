@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../../store/themeStore';
@@ -102,21 +104,18 @@ export default function PairPartnerScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen 
-        options={{
-          title: 'Couple Pairing',
-          headerStyle: { backgroundColor: COLORS.darkSurface },
-          headerTintColor: COLORS.textPrimary,
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={{ paddingRight: 20 }}>
-              <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-            </TouchableOpacity>
-          )
-        }} 
-      />
-      
-      <ScrollView contentContainerStyle={styles.content}>
+    <BlurView intensity={70} tint="dark" style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 60, paddingBottom: 12 }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ padding: 4, marginLeft: -4 }}>
+            <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={{ color: COLORS.textPrimary, fontSize: 18, fontWeight: '700' }}>Couple Pairing</Text>
+          <View style={{ width: 28 }} />
+        </View>
+        
+        <ScrollView contentContainerStyle={styles.content}>
         
         {/* Header Animation / Icon */}
         <View style={styles.headerArea}>
@@ -187,13 +186,14 @@ export default function PairPartnerScreen() {
             )}
           </>
         )}
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </SafeAreaView>
+    </BlurView>
   );
 }
 
 const getStyles = (COLORS: any) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.black },
+  container: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: 20 },
   headerArea: { alignItems: 'center', marginBottom: 32, marginTop: 20 },
   iconCircle: { width: 96, height: 96, borderRadius: 48, backgroundColor: COLORS.card, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
@@ -202,11 +202,11 @@ const getStyles = (COLORS: any) => StyleSheet.create({
   
   card: { backgroundColor: COLORS.card, padding: 20, borderRadius: 16, marginBottom: 16 },
   cardTitle: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '700', marginBottom: 12 },
-  input: { backgroundColor: COLORS.darkSurface, color: COLORS.textPrimary, padding: 16, borderRadius: 12, marginBottom: 16 },
+  input: { backgroundColor: 'transparent', color: COLORS.textPrimary, padding: 16, borderRadius: 12, marginBottom: 16 },
   sendBtn: { backgroundColor: COLORS.error, padding: 16, borderRadius: 12, alignItems: 'center' },
   sendBtnText: { color: COLORS.white, fontWeight: '800' },
   
-  requestRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.darkSurface, padding: 12, borderRadius: 12, marginBottom: 8 },
+  requestRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'transparent', padding: 12, borderRadius: 12, marginBottom: 8 },
   reqName: { color: COLORS.textPrimary, fontWeight: '600' },
   acceptBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.error, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, gap: 6 },
   acceptText: { color: COLORS.white, fontWeight: 'bold' },
@@ -215,6 +215,6 @@ const getStyles = (COLORS: any) => StyleSheet.create({
   pairedCard: { backgroundColor: COLORS.card, padding: 32, borderRadius: 24, alignItems: 'center', borderWidth: 2, borderColor: COLORS.error },
   pairedText: { color: COLORS.textSecondary, fontSize: 16, marginBottom: 8 },
   partnerName: { color: COLORS.error, fontSize: 28, fontWeight: '900', marginBottom: 32 },
-  breakupBtn: { backgroundColor: COLORS.darkSurface, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, borderWidth: 1, borderColor: COLORS.divider },
+  breakupBtn: { backgroundColor: 'transparent', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, borderWidth: 1, borderColor: COLORS.divider },
   breakupText: { color: COLORS.textTertiary, fontWeight: '600' }
 });

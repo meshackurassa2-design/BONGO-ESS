@@ -1,26 +1,18 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { THEMES } from '../constants';
 
-export type ThemeType = 'luxury' | 'love' | 'ocean' | 'cyberpunk' | 'forest' | 'spotify';
+export type ThemeType = 'spotify';
 
 interface ThemeState {
   theme: ThemeType;
   setTheme: (theme: ThemeType) => void;
-  COLORS: typeof THEMES.luxury;
+  COLORS: typeof THEMES.spotify;
 }
 
 export const useThemeStore = create<ThemeState>()(
-  persist(
-    (set) => ({
-      theme: 'spotify',
-      COLORS: THEMES.spotify,
-      setTheme: (theme: ThemeType) => set({ theme, COLORS: THEMES[theme] }),
-    }),
-    {
-      name: 'bongo-theme-storage',
-      storage: createJSONStorage(() => AsyncStorage),
-    }
-  )
+  (set) => ({
+    theme: 'spotify',
+    COLORS: THEMES.spotify,
+    setTheme: (theme: ThemeType) => set({ theme, COLORS: THEMES[theme] }),
+  })
 );

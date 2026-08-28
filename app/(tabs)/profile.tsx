@@ -25,20 +25,10 @@ export default function ProfileScreen() {
 
   const handleOpenImage = async () => {
     setIsImageModalVisible(true);
-    try {
-      await ScreenCapture.preventScreenCaptureAsync();
-    } catch (e) {
-      console.warn("Screen capture prevention not supported on this device/OS", e);
-    }
   };
 
   const handleCloseImage = async () => {
     setIsImageModalVisible(false);
-    try {
-      await ScreenCapture.allowScreenCaptureAsync();
-    } catch (e) {
-      console.warn("Screen capture allow not supported on this device/OS", e);
-    }
   };
 
   if (!session || !profile) {
@@ -130,6 +120,7 @@ export default function ProfileScreen() {
             <MenuRow icon="shield-checkmark" label="Admin Panel: Manage Tickets" iconColor={COLORS.error} onPress={() => router.push('/admin/tickets')} styles={styles} COLORS={COLORS} />
             <MenuRow icon="checkmark-done-circle" label="Admin Panel: Verifications" iconColor={COLORS.error} onPress={() => router.push('/admin/verifications')} styles={styles} COLORS={COLORS} />
             <MenuRow icon="warning" label="Admin Panel: DMCA Reports" iconColor={COLORS.error} onPress={() => router.push('/admin/reports')} styles={styles} COLORS={COLORS} />
+            <MenuRow icon="list" label="Admin Panel: Manage Genres" iconColor={COLORS.error} onPress={() => router.push('/admin/genres')} styles={styles} COLORS={COLORS} />
           </>
         )}
         {(profile.role === 'artist' || profile.role === 'admin') && (
@@ -144,6 +135,8 @@ export default function ProfileScreen() {
         )}
         <MenuRow icon="bar-chart" label="Bongo Wrapped (Stats)" iconColor={COLORS.gold} onPress={() => router.push('/stats')} styles={styles} COLORS={COLORS} />
         <MenuRow icon="diamond" label="Buy Credits" iconColor={COLORS.gold} onPress={() => router.push('/buy-credits')} styles={styles} COLORS={COLORS} />
+        <MenuRow icon="radio" label="Live Radio 📻" iconColor="#FF3B6A" onPress={() => router.push('/(tabs)/radio')} styles={styles} COLORS={COLORS} />
+        <MenuRow icon="library" label="Workspace 🎛️" iconColor="#00C6FF" onPress={() => router.push('/(tabs)/library')} styles={styles} COLORS={COLORS} />
         <MenuRow icon="library-outline" label={t('tabs.library') || "My Library"} iconColor={COLORS.textPrimary} onPress={() => router.push('/library')} styles={styles} COLORS={COLORS} />
         <MenuRow icon="person-outline" label={t('profile.edit_profile')} iconColor={COLORS.textPrimary} onPress={() => router.push('/settings/edit-profile')} isLast styles={styles} COLORS={COLORS} />
       </View>

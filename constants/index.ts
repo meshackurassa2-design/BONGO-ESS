@@ -162,6 +162,7 @@ export type Profile = {
   track_count: number;
   credits: number;
   partner_id?: string;
+  is_admin?: boolean;
 };
 
 export type Comment = {

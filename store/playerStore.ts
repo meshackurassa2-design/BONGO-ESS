@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import TrackPlayer, { Event, State as TPState, AppKilledPlaybackBehavior, Capability, IOSCategory, IOSCategoryMode, IOSCategoryOptions, PitchAlgorithm } from 'react-native-track-player';
+import TrackPlayer, { Event, State as TPState, AppKilledPlaybackBehavior, Capability, IOSCategory, IOSCategoryMode, IOSCategoryOptions, PitchAlgorithm } from '../mockTrackPlayer';
 import { Track } from '../constants';
 import { useOfflineStore } from './offlineStore';
 import { useAuthStore } from './authStore';
@@ -97,6 +97,7 @@ type PlayerStore = {
   playTrack: (track: Track, queue?: Track[]) => Promise<void>;
   togglePlayPause: () => Promise<void>;
   pause: () => Promise<void>;
+  closePlayer: () => Promise<void>;
   skipNext: () => Promise<void>;
   skipPrev: () => Promise<void>;
   seekTo: (ms: number) => Promise<void>;
@@ -135,7 +136,8 @@ export const usePlayerStore = create<PlayerStore>()(
     try {
       try {
         const { Audio } = require('expo-av');
-        await Audio.setAudioModeAsync({ staysActiveInBackground: false, playsInSilentModeIOS: true });
+        // Must be true for the OS to keep the app alive and show the lock screen controller
+        await Audio.setAudioModeAsync({ staysActiveInBackground: true, playsInSilentModeIOS: true });
       } catch (e) {}
 
       await TrackPlayer.setupPlayer({
@@ -147,19 +149,9 @@ export const usePlayerStore = create<PlayerStore>()(
         android: {
           appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback
         },
-        capabilities: [
-          Capability.Play,
-          Capability.Pause,
-          Capability.SkipToNext,
-          Capability.SkipToPrevious,
-          Capability.SeekTo,
-        ],
-        compactCapabilities: [
-          Capability.Play,
-          Capability.Pause,
-          Capability.SkipToNext,
-          Capability.SkipToPrevious,
-        ],
+        capabilities: [],
+        compactCapabilities: [],
+        notificationCapabilities: [],
       });
       set({ isPlayerReady: true });
 
@@ -270,7 +262,20 @@ export const usePlayerStore = create<PlayerStore>()(
   togglePlayPause: async () => {
     if (get().mode === 'listener') return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    const state = (await TrackPlayer.getPlaybackState()).state;
+    
+    // Background recovery: If iOS cleared the audio session memory, the queue will be empty.
+    const currentQueue = await TrackPlayer.getQueue();
+    if (currentQueue.length === 0 && get().currentTrack) {
+       await get().playTrack(get().currentTrack!, get().queue);
+       return;
+    }
+
+    const pbState = await TrackPlayer.getPlaybackState();
+    // Handle both v3 (returns State directly) and v4 (returns { state }) formats defensively
+    const state = (typeof pbState === 'object' && pbState !== null && 'state' in pbState) 
+        ? (pbState as any).state 
+        : pbState;
+        
     if (state === TPState.Playing) {
       await TrackPlayer.pause();
     } else {
@@ -314,6 +319,14 @@ export const usePlayerStore = create<PlayerStore>()(
   seekTo: async (ms: number) => {
     if (get().mode === 'listener') return;
     await TrackPlayer.seekTo(ms / 1000);
+  },
+
+  closePlayer: async () => {
+    if (get().mode === 'listener') return;
+    await TrackPlayer.pause();
+    await TrackPlayer.reset();
+    set({ currentTrack: null, queue: [] });
+    notifyPlaybackState(State.None);
   },
 
   setPlaybackRate: async (rate: number) => {

@@ -15,6 +15,7 @@ import { useAuthStore } from '../../store/authStore';
 import { usePlayerStore, PlayerMode } from '../../store/playerStore';
 import { supabase } from '../../lib/supabase';
 import { Track } from '../../constants';
+import GlassBackButton from '../../components/GlassBackButton';
 
 export default function StationRoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -331,9 +332,7 @@ export default function StationRoomScreen() {
       
       {/* Top Bar - Neon "ON AIR" */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
-          <Ionicons name="chevron-down" size={28} color="#FFF" />
-        </TouchableOpacity>
+        <GlassBackButton onPress={() => router.back()} />
         <View style={styles.onAirContainer}>
           <Animated.View style={[styles.onAirGlow, { transform: [{ scale: pulseValue }], opacity: currentTrack || isSpeakerActive ? 1 : 0.4 }]} />
           <Text style={styles.onAirText}>ON AIR</Text>
