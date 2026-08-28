@@ -3,13 +3,13 @@
     "name": "Bongo Stream",
     "slug": "combongostreamapp",
     "backgroundColor": "#0A0A0F",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "scheme": "bongo-stream",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/images/transparent.png",
       "resizeMode": "contain",
       "backgroundColor": "#0A0A0F"
     },
@@ -32,7 +32,7 @@
         "backgroundColor": "#0A0A0F"
       },
       "package": "com.bongostream.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",

@@ -1,4 +1,4 @@
-import TrackPlayer, { Event } from './mockTrackPlayer';
+import TrackPlayer, { Event } from 'react-native-track-player';
 
 module.exports = async function() {
     TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());
