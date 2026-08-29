@@ -162,7 +162,7 @@ export default function ShareCardModal({ visible, onClose, track, quote: initial
 
               {/* Watermark */}
               <View style={styles.watermarkBox}>
-                <Image source={require('../assets/images/bongo_logo.png')} style={{ width: 22, height: 22, marginRight: 8, borderRadius: 5 }} />
+                <Image source={require('../assets/icon.png')} style={{ width: 22, height: 22, marginRight: 8, borderRadius: 5 }} />
                 <Text style={styles.watermarkText}>Bongo Stream</Text>
               </View>
             </View>

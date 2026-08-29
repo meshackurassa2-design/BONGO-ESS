@@ -143,7 +143,12 @@ export const usePlayerStore = create<PlayerStore>()(
       await TrackPlayer.setupPlayer({
         iosCategory: IOSCategory.Playback,
         iosCategoryMode: IOSCategoryMode.Default,
-        iosCategoryOptions: [IOSCategoryOptions.AllowBluetooth, IOSCategoryOptions.AllowBluetoothA2DP]
+        iosCategoryOptions: [IOSCategoryOptions.AllowBluetooth, IOSCategoryOptions.AllowBluetoothA2DP],
+        minBuffer: 15,
+        maxBuffer: 50,
+        playBuffer: 2.5,
+        backBuffer: 15,
+        maxCacheSize: 1024 * 5,
       });
       await TrackPlayer.updateOptions({
         android: {
