@@ -7,6 +7,10 @@ let in_method = false;
 let brace_depth = 0;
 
 for (let line of lines) {
+    line = line.replace("Arguments.fromBundle(item)", "Arguments.fromBundle(item as android.os.Bundle)");
+    line = line.replace("Arguments.fromBundle(item!!)", "Arguments.fromBundle(item as android.os.Bundle)");
+    line = line.replace("Arguments.fromBundle(musicService.getPlayerStateBundle(musicService.state))", "Arguments.fromBundle(musicService.getPlayerStateBundle(musicService.state) as android.os.Bundle)");
+    
     if (line.includes(") = scope.launch {")) {
         line = line.replace(") = scope.launch {", ") { scope.launch {");
         in_method = true;
