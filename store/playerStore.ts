@@ -135,18 +135,25 @@ export const usePlayerStore = create<PlayerStore>()(
     if (get().isPlayerReady) return;
     try {
       try {
-        const { Audio } = require('expo-av');
-        // Must be true for the OS to keep the app alive and show the lock screen controller
-        await Audio.setAudioModeAsync({ staysActiveInBackground: true, playsInSilentModeIOS: true });
+        const { Audio, InterruptionModeIOS, InterruptionModeAndroid } = require('expo-av');
+        await Audio.setAudioModeAsync({ 
+          allowsRecordingIOS: false,
+          staysActiveInBackground: true, 
+          playsInSilentModeIOS: true,
+          interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+          shouldDuckAndroid: true,
+          interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+          playThroughEarpieceAndroid: false
+        });
       } catch (e) {}
 
       await TrackPlayer.setupPlayer({
         iosCategory: IOSCategory.Playback,
         iosCategoryMode: IOSCategoryMode.Default,
         iosCategoryOptions: [IOSCategoryOptions.AllowBluetooth, IOSCategoryOptions.AllowBluetoothA2DP],
-        minBuffer: 15,
+        minBuffer: 5,
         maxBuffer: 50,
-        playBuffer: 2.5,
+        playBuffer: 0.5,
         backBuffer: 15,
         maxCacheSize: 1024 * 5,
       });

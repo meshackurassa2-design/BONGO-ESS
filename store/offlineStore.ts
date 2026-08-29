@@ -2,13 +2,13 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
-import CryptoJS from 'crypto-js';
+import * as CryptoJS from 'crypto-js';
 import { Track } from '../constants';
 
 const SECRET_KEY = 'bongo_stream_offline_secure_key_2024';
 
 type OfflineStore = {
-  downloadedTracks: Record<string, Track & { localUri: string }>;
+  downloadedTracks: Record<string, Track & { localUri: string; localCoverUri?: string }>;
   isDownloading: Record<string, boolean>;
   downloadProgress: Record<string, number>;
   
@@ -17,6 +17,7 @@ type OfflineStore = {
   isDownloaded: (trackId: string) => boolean;
   getLocalUri: (trackId: string) => string | null;
   getDecryptedUri: (trackId: string) => Promise<string | null>;
+  getOfflineCoverUri: (trackId: string) => Promise<string | null>;
 };
 
 export const useOfflineStore = create<OfflineStore>()(
