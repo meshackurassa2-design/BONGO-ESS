@@ -393,10 +393,10 @@ index b2409a0..12612f9 100644
      }
  }
 diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
-index afa6b0f..55f9316 100644
+index afa6b0f..aa5723c 100644
 --- a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
 +++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
-@@ -388,7 +388,27 @@ class MusicService : HeadlessJsTaskService() {
+@@ -388,7 +388,38 @@ class MusicService : HeadlessJsTaskService() {
  
      @MainThread
      fun setRate(value: Float) {
@@ -404,22 +404,33 @@ index afa6b0f..55f9316 100644
 +        try {
 +            val params = com.google.android.exoplayer2.PlaybackParameters(1.0f, value)
 +            var currentClass: Class<*>? = player.javaClass
-+            var exoPlayerField: java.lang.reflect.Field? = null
-+            while (currentClass != null && exoPlayerField == null) {
-+                try {
-+                    exoPlayerField = currentClass.getDeclaredField("exoPlayer")
-+                } catch (e: NoSuchFieldException) {
++            var exoPlayer: com.google.android.exoplayer2.ExoPlayer? = null
++            
++            while (currentClass != null && exoPlayer == null) {
++                for (method in currentClass.declaredMethods) {
++                    if (method.parameterTypes.isEmpty() && com.google.android.exoplayer2.ExoPlayer::class.java.isAssignableFrom(method.returnType)) {
++                        try {
++                            method.isAccessible = true
++                            exoPlayer = method.invoke(player) as com.google.android.exoplayer2.ExoPlayer
++                            if (exoPlayer != null) break
++                        } catch (e: Exception) {
++                            // ignore and continue
++                        }
++                    }
++                }
++                if (exoPlayer == null) {
 +                    currentClass = currentClass.superclass
 +                }
 +            }
-+            if (exoPlayerField != null) {
-+                exoPlayerField.isAccessible = true
-+                val exoPlayer = exoPlayerField.get(player) as com.google.android.exoplayer2.ExoPlayer
++            
++            if (exoPlayer != null) {
 +                exoPlayer.playbackParameters = params
 +            } else {
++                android.util.Log.e("BongoStream", "ExoPlayer method not found via reflection")
 +                player.playbackSpeed = value
 +            }
 +        } catch (e: Exception) {
++            android.util.Log.e("BongoStream", "Reflection exception in setRate", e)
 +            player.playbackSpeed = value
 +        }
      }
