@@ -392,3 +392,36 @@ index b2409a0..12612f9 100644
 +    }
      }
  }
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
+index afa6b0f..55f9316 100644
+--- a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
+@@ -388,7 +388,27 @@ class MusicService : HeadlessJsTaskService() {
+ 
+     @MainThread
+     fun setRate(value: Float) {
+-        player.playbackSpeed = value
++        try {
++            val params = com.google.android.exoplayer2.PlaybackParameters(1.0f, value)
++            var currentClass: Class<*>? = player.javaClass
++            var exoPlayerField: java.lang.reflect.Field? = null
++            while (currentClass != null && exoPlayerField == null) {
++                try {
++                    exoPlayerField = currentClass.getDeclaredField("exoPlayer")
++                } catch (e: NoSuchFieldException) {
++                    currentClass = currentClass.superclass
++                }
++            }
++            if (exoPlayerField != null) {
++                exoPlayerField.isAccessible = true
++                val exoPlayer = exoPlayerField.get(player) as com.google.android.exoplayer2.ExoPlayer
++                exoPlayer.playbackParameters = params
++            } else {
++                player.playbackSpeed = value
++            }
++        } catch (e: Exception) {
++            player.playbackSpeed = value
++        }
+     }
+ 
+     @MainThread
