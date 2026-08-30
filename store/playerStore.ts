@@ -291,23 +291,21 @@ export const usePlayerStore = create<PlayerStore>()(
     if (get().mode === 'listener') return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     
-    // Background recovery: If iOS cleared the audio session memory, the queue will be empty.
-    const currentQueue = await TrackPlayer.getQueue();
-    if (currentQueue.length === 0 && get().currentTrack) {
-       await get().playTrack(get().currentTrack!, get().queue);
-       return;
-    }
-
-    const pbState = await TrackPlayer.getPlaybackState();
-    // Handle both v3 (returns State directly) and v4 (returns { state }) formats defensively
-    const state = (typeof pbState === 'object' && pbState !== null && 'state' in pbState) 
-        ? (pbState as any).state 
-        : pbState;
-        
-    if (state === TPState.Playing) {
-      await TrackPlayer.pause();
+    // Use the instantly available local playback state for zero-latency response
+    if (_currentPlaybackState === State.Playing) {
+      // Optimistically update the UI instantly
+      notifyPlaybackState(State.Paused);
+      TrackPlayer.pause().catch(() => {});
     } else {
-      await TrackPlayer.play();
+      // Optimistically update the UI instantly
+      notifyPlaybackState(State.Playing);
+      TrackPlayer.play().then(async () => {
+         // Background recovery: If the queue is somehow empty when we try to play, recover it
+         const currentQueue = await TrackPlayer.getQueue();
+         if (currentQueue.length === 0 && get().currentTrack) {
+            await get().playTrack(get().currentTrack!, get().queue);
+         }
+      }).catch(() => {});
     }
   },
 
