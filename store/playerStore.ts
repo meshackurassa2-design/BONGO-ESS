@@ -150,11 +150,7 @@ export const usePlayerStore = create<PlayerStore>()(
       await TrackPlayer.setupPlayer({
         iosCategory: IOSCategory.Playback,
         iosCategoryMode: IOSCategoryMode.Default,
-        iosCategoryOptions: [IOSCategoryOptions.AllowBluetooth, IOSCategoryOptions.AllowBluetoothA2DP],
-        autoHandleInterruptions: true,
-        waitForBuffer: false,
-        minBuffer: 1,
-        playBuffer: 1,
+        iosCategoryOptions: [IOSCategoryOptions.AllowBluetooth, IOSCategoryOptions.AllowBluetoothA2DP]
       });
       await TrackPlayer.updateOptions({
         android: {
@@ -290,22 +286,11 @@ export const usePlayerStore = create<PlayerStore>()(
   togglePlayPause: async () => {
     if (get().mode === 'listener') return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    
-    // Use the instantly available local playback state for zero-latency response
-    if (_currentPlaybackState === State.Playing) {
-      // Optimistically update the UI instantly
-      notifyPlaybackState(State.Paused);
-      TrackPlayer.pause().catch(() => {});
+    const state = (await TrackPlayer.getPlaybackState()).state;
+    if (state === TPState.Playing) {
+      await TrackPlayer.pause();
     } else {
-      // Optimistically update the UI instantly
-      notifyPlaybackState(State.Playing);
-      TrackPlayer.play().then(async () => {
-         // Background recovery: If the queue is somehow empty when we try to play, recover it
-         const currentQueue = await TrackPlayer.getQueue();
-         if (currentQueue.length === 0 && get().currentTrack) {
-            await get().playTrack(get().currentTrack!, get().queue);
-         }
-      }).catch(() => {});
+      await TrackPlayer.play();
     }
   },
 
