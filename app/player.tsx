@@ -988,6 +988,7 @@ export default function PlayerScreen() {
               <View>
                 <Text style={styles.modalTitle}>Audio Effects</Text>
                 <Text style={styles.modalSub}>Speed & Equalizer</Text>
+                <Text style={styles.modalSub}>Pitch Adjustment</Text>
               </View>
               <TouchableOpacity onPress={() => setShowFxModal(false)} style={{ padding: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 20 }}>
                 <Ionicons name="close" size={24} color="#fff" />
@@ -995,35 +996,6 @@ export default function PlayerScreen() {
             </View>
             
             <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Voice Changer & Speed */}
-              <View style={{ marginBottom: 30, backgroundColor: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 16 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: COLORS.textPrimary, fontWeight: '700' }}>Playback Speed</Text>
-                  <Text style={{ color: COLORS.gold, fontWeight: '700' }}>{playbackRate.toFixed(2)}x</Text>
-                </View>
-                <Slider
-                  style={{ width: '100%', height: 40 }}
-                  minimumValue={0.5}
-                  maximumValue={2.0}
-                  step={0.1}
-                  value={playbackRate}
-                  onSlidingComplete={setPlaybackRate}
-                  minimumTrackTintColor={COLORS.gold}
-                  maximumTrackTintColor={COLORS.divider}
-                  thumbTintColor={COLORS.gold}
-                />
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -10 }}>
-                  <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>Slow</Text>
-                  <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>Fast</Text>
-                </View>
-                
-                {playbackRate !== 1.0 && (
-                  <TouchableOpacity onPress={() => setPlaybackRate(1.0)} style={{ marginTop: 12, alignSelf: 'flex-start' }}>
-                    <Text style={{ color: COLORS.gold, fontSize: 13, fontWeight: '600' }}>Reset Speed</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
               {/* Voice Changer */}
               <View style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 16, marginBottom: 20 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -1033,15 +1005,15 @@ export default function PlayerScreen() {
                 
                 <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
                   <TouchableOpacity onPress={() => setPlaybackRate(1.5)} style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: playbackRate > 1.2 ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: playbackRate > 1.2 ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.1)' }}>
-                    <Text style={{ color: playbackRate > 1.2 ? COLORS.gold : COLORS.textSecondary, fontSize: 14, fontWeight: '600' }}>🐿️ Chipmunk</Text>
+                    <Text style={{ color: playbackRate > 1.2 ? COLORS.gold : COLORS.textSecondary, fontSize: 14, fontWeight: '600' }}>Chipmunk</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity onPress={() => setPlaybackRate(0.7)} style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: playbackRate < 0.9 ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: playbackRate < 0.9 ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.1)' }}>
-                    <Text style={{ color: playbackRate < 0.9 ? COLORS.gold : COLORS.textSecondary, fontSize: 14, fontWeight: '600' }}>👹 Deep Voice</Text>
+                    <Text style={{ color: playbackRate < 0.9 ? COLORS.gold : COLORS.textSecondary, fontSize: 14, fontWeight: '600' }}>Deep Voice</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity onPress={() => setPlaybackRate(1.0)} style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: playbackRate === 1.0 ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: playbackRate === 1.0 ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.1)' }}>
-                    <Text style={{ color: playbackRate === 1.0 ? COLORS.gold : COLORS.textSecondary, fontSize: 14, fontWeight: '600' }}>👤 Normal</Text>
+                    <Text style={{ color: playbackRate === 1.0 ? COLORS.gold : COLORS.textSecondary, fontSize: 14, fontWeight: '600' }}>Normal</Text>
                   </TouchableOpacity>
                 </View>
               </View>
