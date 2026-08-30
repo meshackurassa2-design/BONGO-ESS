@@ -995,7 +995,7 @@ export default function PlayerScreen() {
             </View>
             
             <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Pitch & Speed */}
+              {/* Voice Changer & Speed */}
               <View style={{ marginBottom: 30, backgroundColor: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 16 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                   <Text style={{ color: COLORS.textPrimary, fontWeight: '700' }}>Playback Speed</Text>
@@ -1007,7 +1007,7 @@ export default function PlayerScreen() {
                   maximumValue={2.0}
                   step={0.1}
                   value={playbackRate}
-                  onValueChange={setPlaybackRate}
+                  onSlidingComplete={setPlaybackRate}
                   minimumTrackTintColor={COLORS.gold}
                   maximumTrackTintColor={COLORS.divider}
                   thumbTintColor={COLORS.gold}
@@ -1024,50 +1024,24 @@ export default function PlayerScreen() {
                 )}
               </View>
 
-              {/* Graphic Equalizer */}
+              {/* Voice Changer */}
               <View style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 16, marginBottom: 20 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <Text style={{ color: COLORS.textPrimary, fontWeight: '700' }}>Music Equalizer</Text>
-                  <Text style={{ color: COLORS.textSecondary, fontSize: 12, backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>Custom</Text>
+                  <Text style={{ color: COLORS.textPrimary, fontWeight: '700' }}>Voice Changer</Text>
+                  <Text style={{ color: COLORS.textSecondary, fontSize: 12, backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>Pitch FX</Text>
                 </View>
                 
-                {/* Sliders */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', height: 150, paddingHorizontal: 10 }}>
-                  {['60Hz', '230Hz', '910Hz', '3.6kHz', '14kHz'].map((label, idx) => (
-                    <View key={idx} style={{ alignItems: 'center' }}>
-                      <View style={{ height: 120, width: 40, justifyContent: 'center', alignItems: 'center' }}>
-                        {/* Vertical Slider implementation using transform */}
-                        <Slider
-                          style={{ width: 120, height: 40, transform: [{ rotate: '-90deg' }] }}
-                          minimumValue={0}
-                          maximumValue={1}
-                          step={0.05}
-                          value={eqBands[idx]}
-                          onValueChange={(val) => {
-                            const newBands = [...eqBands];
-                            newBands[idx] = val;
-                            setEqBands(newBands);
-                          }}
-                          minimumTrackTintColor={COLORS.gold}
-                          maximumTrackTintColor={COLORS.divider}
-                          thumbTintColor={COLORS.gold}
-                        />
-                      </View>
-                      <Text style={{ color: COLORS.textTertiary, fontSize: 10, marginTop: 8, fontWeight: '600' }}>{label}</Text>
-                    </View>
-                  ))}
-                </View>
-                
-                {/* Presets */}
-                <View style={{ flexDirection: 'row', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
-                  <TouchableOpacity onPress={() => setEqBands([0.8, 0.6, 0.4, 0.6, 0.7])} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(212,175,55,0.15)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)' }}>
-                    <Text style={{ color: COLORS.gold, fontSize: 12, fontWeight: '600' }}>Bass Boost</Text>
+                <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+                  <TouchableOpacity onPress={() => setPlaybackRate(1.5)} style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: playbackRate > 1.2 ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: playbackRate > 1.2 ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.1)' }}>
+                    <Text style={{ color: playbackRate > 1.2 ? COLORS.gold : COLORS.textSecondary, fontSize: 14, fontWeight: '600' }}>🐿️ Chipmunk</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setEqBands([0.3, 0.4, 0.8, 0.7, 0.5])} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                    <Text style={{ color: COLORS.textSecondary, fontSize: 12, fontWeight: '600' }}>Vocal</Text>
+                  
+                  <TouchableOpacity onPress={() => setPlaybackRate(0.7)} style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: playbackRate < 0.9 ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: playbackRate < 0.9 ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.1)' }}>
+                    <Text style={{ color: playbackRate < 0.9 ? COLORS.gold : COLORS.textSecondary, fontSize: 14, fontWeight: '600' }}>👹 Deep Voice</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setEqBands([0.5, 0.5, 0.5, 0.5, 0.5])} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                    <Text style={{ color: COLORS.textSecondary, fontSize: 12, fontWeight: '600' }}>Flat</Text>
+                  
+                  <TouchableOpacity onPress={() => setPlaybackRate(1.0)} style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: playbackRate === 1.0 ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: playbackRate === 1.0 ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.1)' }}>
+                    <Text style={{ color: playbackRate === 1.0 ? COLORS.gold : COLORS.textSecondary, fontSize: 14, fontWeight: '600' }}>👤 Normal</Text>
                   </TouchableOpacity>
                 </View>
               </View>
