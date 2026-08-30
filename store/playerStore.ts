@@ -8,6 +8,7 @@ import { useAuthStore } from './authStore';
 import { supabase } from '../lib/supabase';
 import * as Haptics from 'expo-haptics';
 import * as React from 'react';
+import { Alert } from 'react-native';
 
 export enum State {
   None = 'none',
@@ -214,11 +215,12 @@ export const usePlayerStore = create<PlayerStore>()(
         }
       }
     } catch (e) {
-      console.log('TrackPlayer init error:', e);
-      if (String(e).includes('already initialized')) {
-        set({ isPlayerReady: true });
+        console.log('TrackPlayer init error:', e);
+        Alert.alert("Init Error", String(e));
+        if (String(e).includes('already initialized')) {
+          set({ isPlayerReady: true });
+        }
       }
-    }
   },
 
   playTrack: async (track, queue = [track]) => {
