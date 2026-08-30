@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt
-index b2409a0..12612f9 100644
+index b2409a0..4bce34a 100644
 --- a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt
 +++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt
 @@ -251,7 +251,7 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
@@ -292,7 +292,7 @@ index b2409a0..12612f9 100644
  
          if (index >= 0 && index < musicService.tracks.size) {
 -            callback.resolve(Arguments.fromBundle(musicService.tracks[index].originalItem))
-+            callback.resolve(Arguments.fromBundle(musicService.tracks[index].originalItem as android.os.Bundle))
++            callback.resolve(Arguments.fromBundle(musicService.tracks[index].originalItem ?: android.os.Bundle()))
          } else {
              callback.resolve(null)
          }
@@ -314,7 +314,7 @@ index b2409a0..12612f9 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
  
          try {
-@@ -570,49 +598,55 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -570,49 +598,56 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
              rejectWithException(callback, exception)
          }
      }
@@ -334,11 +334,13 @@ index b2409a0..12612f9 100644
 -    fun getActiveTrack(callback: Promise) = scope.launch {
 +    fun getActiveTrack(callback: Promise) { scope.launch {
          if (verifyServiceBoundOrReject(callback)) return@launch
++        val currentIndex = musicService.getCurrentTrackIndex()
          callback.resolve(
-             if (musicService.tracks.isEmpty()) null
+-            if (musicService.tracks.isEmpty()) null
++            if (musicService.tracks.isEmpty() || currentIndex < 0 || currentIndex >= musicService.tracks.size) null
              else Arguments.fromBundle(
 -                musicService.tracks[musicService.getCurrentTrackIndex()].originalItem
-+                musicService.tracks[musicService.getCurrentTrackIndex()].originalItem as android.os.Bundle
++                musicService.tracks[currentIndex].originalItem ?: android.os.Bundle()
              )
          )
      }
@@ -377,7 +379,7 @@ index b2409a0..12612f9 100644
          if (verifyServiceBoundOrReject(callback)) return@launch
          var bundle = Bundle()
          bundle.putDouble("duration", musicService.getDurationInSeconds());
-@@ -620,10 +654,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
+@@ -620,10 +655,12 @@ class MusicModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
          bundle.putDouble("buffered", musicService.getBufferedPositionInSeconds());
          callback.resolve(Arguments.fromBundle(bundle))
      }
@@ -388,12 +390,12 @@ index b2409a0..12612f9 100644
 +    fun getPlaybackState(callback: Promise) { scope.launch {
          if (verifyServiceBoundOrReject(callback)) return@launch
 -        callback.resolve(Arguments.fromBundle(musicService.getPlayerStateBundle(musicService.state)))
-+        callback.resolve(Arguments.fromBundle(musicService.getPlayerStateBundle(musicService.state) as android.os.Bundle))
++        callback.resolve(Arguments.fromBundle(musicService.getPlayerStateBundle(musicService.state) ?: android.os.Bundle()))
 +    }
      }
  }
 diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
-index afa6b0f..aa5723c 100644
+index afa6b0f..43ef6d2 100644
 --- a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
 +++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
 @@ -388,7 +388,38 @@ class MusicService : HeadlessJsTaskService() {
@@ -411,7 +413,7 @@ index afa6b0f..aa5723c 100644
 +                    if (method.parameterTypes.isEmpty() && com.google.android.exoplayer2.ExoPlayer::class.java.isAssignableFrom(method.returnType)) {
 +                        try {
 +                            method.isAccessible = true
-+                            exoPlayer = method.invoke(player) as com.google.android.exoplayer2.ExoPlayer
++                            exoPlayer = method.invoke(player) as? com.google.android.exoplayer2.ExoPlayer
 +                            if (exoPlayer != null) break
 +                        } catch (e: Exception) {
 +                            // ignore and continue
