@@ -395,7 +395,7 @@ index b2409a0..4bce34a 100644
      }
  }
 diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
-index afa6b0f..43ef6d2 100644
+index afa6b0f..ad9b3a6 100644
 --- a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
 +++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
 @@ -388,7 +388,38 @@ class MusicService : HeadlessJsTaskService() {
@@ -431,10 +431,30 @@ index afa6b0f..43ef6d2 100644
 +                android.util.Log.e("BongoStream", "ExoPlayer method not found via reflection")
 +                player.playbackSpeed = value
 +            }
-+        } catch (e: Exception) {
-+            android.util.Log.e("BongoStream", "Reflection exception in setRate", e)
++        } catch (t: Throwable) {
++            android.util.Log.e("BongoStream", "Reflection exception in setRate", t)
 +            player.playbackSpeed = value
 +        }
      }
  
      @MainThread
+@@ -461,11 +492,16 @@ class MusicService : HeadlessJsTaskService() {
+         val b = Bundle()
+         b.putDouble("lastPosition", oldPosition)
+         if (tracks.isNotEmpty()) {
+-            b.putInt("index", player.currentIndex)
+-            b.putBundle("track", tracks[player.currentIndex].originalItem)
++            val currentIndex = player.currentIndex
++            b.putInt("index", currentIndex)
++            if (currentIndex >= 0 && currentIndex < tracks.size) {
++                b.putBundle("track", tracks[currentIndex].originalItem)
++            }
+             if (previousIndex != null) {
+                 b.putInt("lastIndex", previousIndex)
+-                b.putBundle("lastTrack", tracks[previousIndex].originalItem)
++                if (previousIndex >= 0 && previousIndex < tracks.size) {
++                    b.putBundle("lastTrack", tracks[previousIndex].originalItem)
++                }
+             }
+         }
+         emit(MusicEvents.PLAYBACK_ACTIVE_TRACK_CHANGED, b)
