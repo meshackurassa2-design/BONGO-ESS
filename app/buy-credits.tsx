@@ -121,7 +121,7 @@ export default function BuyCreditsScreen() {
   };
 
   return (
-    <BlurView intensity={70} tint="dark" style={{ flex: 1 }}>
+    <BlurView intensity={70} tint="dark" style={[{ flex: 1 }, Platform.OS === 'android' && { backgroundColor: 'rgba(0,0,0,0.85)' }]} experimentalBlurMethod="dimezisBlurView">
       <SafeAreaView style={styles.container} edges={['top']}>
         <Stack.Screen options={{ headerShown: false }} />
       
@@ -136,7 +136,7 @@ export default function BuyCreditsScreen() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           
-          <BlurView intensity={30} tint="dark" style={styles.balanceCard}>
+          <BlurView intensity={30} tint="dark" style={[styles.balanceCard, Platform.OS === 'android' && { backgroundColor: 'rgba(0,0,0,0.4)' }]} experimentalBlurMethod="dimezisBlurView">
             <Ionicons name="diamond" size={32} color={COLORS.gold} />
             <Text style={styles.balanceTitle}>Current Balance</Text>
             <Text style={styles.balanceAmount}>{profile?.credits || 0} Credits</Text>
@@ -165,7 +165,7 @@ export default function BuyCreditsScreen() {
             )}
           </BlurView>
 
-          <BlurView intensity={30} tint="dark" style={styles.packageCard}>
+          <BlurView intensity={30} tint="dark" style={[styles.packageCard, Platform.OS === 'android' && { backgroundColor: 'rgba(0,0,0,0.4)' }]} experimentalBlurMethod="dimezisBlurView">
             <View style={styles.packageHeader}>
               <Text style={styles.packageTitle}>Need more credits?</Text>
             </View>

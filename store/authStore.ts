@@ -82,6 +82,19 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   signUp: async (email, password, username, displayName, role) => {
     set({ isLoading: true });
+    
+    // Pre-check if username already exists to prevent database trigger crashes (500 errors)
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('username', username)
+      .maybeSingle();
+      
+    if (existingUser) {
+      set({ isLoading: false });
+      return "Jina hili la mtumiaji (Username) tayari linatumika. Tafadhali chagua jingine.";
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -89,7 +102,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         data: { username, display_name: displayName },
       },
     });
-    if (error) { set({ isLoading: false }); return error.message; }
+    
+    if (error) { 
+      set({ isLoading: false }); 
+      
+      let errMsg = error.message;
+      // Handle the raw 500 JSON response crash
+      if (errMsg.includes('{"type":"default"') || errMsg.includes('500')) {
+        errMsg = "Kuna tatizo la mtandao au barua pepe (email) hii tayari inatumika. Tafadhali jaribu tena.";
+      } else if (errMsg.includes('already registered')) {
+        errMsg = "Barua pepe (email) hii tayari imesajiliwa.";
+      }
+      
+      return errMsg; 
+    }
     // Update role after signup
     if (data.user) {
       await supabase.from('profiles').update({ role }).eq('id', data.user.id);

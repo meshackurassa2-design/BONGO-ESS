@@ -16,6 +16,8 @@ import { useOfflineStore } from '../store/offlineStore';
 import { useThemeStore, VinylThemeType } from '../store/themeStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
+import { useRewardedAd } from '../components/ads/useRewardedAd';
+import AppBannerAd from '../components/ads/AppBannerAd';
 import ShareCardModal from '../components/ShareCardModal';
 import { ScrollView, FlatList } from 'react-native';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
@@ -78,6 +80,7 @@ export default function PlayerScreen() {
   const { COLORS, vinylTheme, setVinylTheme } = useThemeStore();
   const styles = getStyles(COLORS);
   const router = useRouter();
+  const { showAd } = useRewardedAd();
   const insets = useSafeAreaInsets();
   const {
     currentTrack,
@@ -672,6 +675,11 @@ export default function PlayerScreen() {
                 {/* Paper Ring Wear Effect on Label */}
                 <View style={{ ...StyleSheet.absoluteFillObject, borderRadius: 1000, borderWidth: 15, borderColor: 'rgba(0,0,0,0.4)' }} pointerEvents="none" />
                 <View style={{ ...StyleSheet.absoluteFillObject, borderRadius: 1000, borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)', margin: 4 }} pointerEvents="none" />
+                
+                {/* Ad Overlay on Vinyl Center */}
+                <View style={{ position: 'absolute', width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', transform: [{ scale: 0.65 }] }}>
+                  <AppBannerAd />
+                </View>
               </View>
               
               {/* Center Spindle Hole */}
@@ -736,7 +744,25 @@ export default function PlayerScreen() {
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.downloadBtn} 
-            onPress={() => !isDownloaded(currentTrack.id) && !isDownloading[currentTrack.id] && downloadTrack(currentTrack)}
+            onPress={() => {
+              if (isDownloaded(currentTrack.id) || isDownloading[currentTrack.id]) return;
+              Alert.alert(
+                "Pakua Wimbo",
+                "Tazama tangazo fupi ili kupakua wimbo huu na kusikiliza bila intaneti.",
+                [
+                  { text: "Ghairi", style: "cancel" },
+                  { 
+                    text: "Tazama", 
+                    onPress: () => {
+                      showAd(
+                        () => downloadTrack(currentTrack),
+                        () => {}
+                      );
+                    }
+                  }
+                ]
+              );
+            }}
           >
             {isDownloading[currentTrack.id] ? (
               <View style={{ alignItems: 'center' }}>

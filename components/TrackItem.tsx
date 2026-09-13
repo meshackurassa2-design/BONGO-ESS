@@ -8,6 +8,7 @@ import { useOfflineStore } from '../store/offlineStore';
 import { useJamStore } from '../store/jamStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
+import { useRewardedAd } from './ads/useRewardedAd';
 
 type Props = {
   track: Track;
@@ -29,6 +30,27 @@ export default function TrackItem({ track, isPlaying, onPress, onArtistPress, on
   const role = useJamStore(s => s.role);
   const broadcastAddTrack = useJamStore(s => s.broadcastAddTrack);
   const session = useAuthStore(s => s.session);
+
+  const { showAd } = useRewardedAd();
+
+  const handleDownload = () => {
+    Alert.alert(
+      "Pakua Wimbo",
+      "Tazama tangazo fupi ili kupakua wimbo huu na kusikiliza bila intaneti.",
+      [
+        { text: "Ghairi", style: "cancel" },
+        { 
+          text: "Tazama", 
+          onPress: () => {
+            showAd(
+              () => downloadTrack(track),
+              () => {}
+            );
+          }
+        }
+      ]
+    );
+  };
 
   const handleReport = () => {
     Alert.alert(
@@ -100,7 +122,7 @@ export default function TrackItem({ track, isPlaying, onPress, onArtistPress, on
           ) : isDownloaded ? (
             <Ionicons name="checkmark-circle" size={16} color={COLORS.gold} />
           ) : (
-            <TouchableOpacity onPress={() => downloadTrack(track)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <TouchableOpacity onPress={handleDownload} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Ionicons name="download-outline" size={16} color={COLORS.textTertiary} />
             </TouchableOpacity>
           )}

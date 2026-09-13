@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { useThemeStore } from '../../store/themeStore';
@@ -59,8 +59,9 @@ export default function AudioRecorder({ onAudioReady, onClear, currentAudioUri, 
       }, 1000);
       setTimer(newTimer);
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to start recording', err);
+      Alert.alert('Error', 'Failed to start recording. Please check your microphone permissions.');
     }
   };
 

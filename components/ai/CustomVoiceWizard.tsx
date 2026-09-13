@@ -156,8 +156,9 @@ export default function CustomVoiceWizard({ visible, onClose, onSuccess }: Custo
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
       const { recording: newRecording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
       setRecording(newRecording);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to start recording', err);
+      Alert.alert('Error', 'Failed to start recording. Please check your microphone permissions.');
     }
   };
 
@@ -169,8 +170,9 @@ export default function CustomVoiceWizard({ visible, onClose, onSuccess }: Custo
       await currentRecording.stopAndUnloadAsync();
       const uri = currentRecording.getURI();
       if (uri) setVerifyAudioUri(uri);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to stop recording', err);
+      Alert.alert('Error', 'Failed to stop recording.');
     }
   };
 
@@ -181,8 +183,9 @@ export default function CustomVoiceWizard({ visible, onClose, onSuccess }: Custo
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
       const { recording: newRecording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
       setSourceRecording(newRecording);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to start source recording', err);
+      Alert.alert('Error', 'Failed to start source recording. Please check your microphone permissions.');
     }
   };
 
@@ -197,8 +200,9 @@ export default function CustomVoiceWizard({ visible, onClose, onSuccess }: Custo
         setSourceAudioUri(uri);
         setSourceAudioName("Recorded Audio");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to stop source recording', err);
+      Alert.alert('Error', 'Failed to stop source recording.');
     }
   };
 

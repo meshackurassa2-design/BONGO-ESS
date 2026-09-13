@@ -13,6 +13,8 @@ import { useAIStore } from '../../store/aiStore';
 import TrackItem from '../../components/TrackItem';
 import { TaskItem } from '../../components/ai/WorkspaceTab';
 import * as MediaLibrary from 'expo-media-library';
+import * as DocumentPicker from 'expo-document-picker';
+import AppBannerAd from '../../components/ads/AppBannerAd';
 
 export default function LibraryScreen() {
   const { COLORS } = useThemeStore();
@@ -292,6 +294,11 @@ export default function LibraryScreen() {
                 <Text style={styles.emptyText}>You haven't created any playlists yet</Text>
               </View>
             )}
+            ListFooterComponent={() => (
+              <View style={{ alignItems: 'center', marginTop: 20 }}>
+                <AppBannerAd />
+              </View>
+            )}
           />
         </View>
       ) : (
@@ -334,6 +341,11 @@ export default function LibraryScreen() {
                   onArtistPress={() => router.push({ pathname: '/artist/[id]', params: { id: item.user_id } })}
                   onDelete={tab === 'uploads' ? () => handleDeleteTrack(item) : undefined}
                 />
+              )}
+              ListFooterComponent={() => (
+                <View style={{ alignItems: 'center', marginTop: 20 }}>
+                  <AppBannerAd />
+                </View>
               )}
             />
           )}

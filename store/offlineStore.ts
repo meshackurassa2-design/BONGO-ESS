@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as CryptoJS from 'crypto-js';
+import { Alert } from 'react-native';
 import { Track } from '../constants';
 
 const SECRET_KEY = 'bongo_stream_offline_secure_key_2024';
@@ -95,6 +96,7 @@ export const useOfflineStore = create<OfflineStore>()(
           }
         } catch (error) {
           console.error("Failed to download track:", error);
+          Alert.alert("Download Failed", "There was an error downloading the track. Please try again.");
         } finally {
           set((state) => {
             const { [track.id]: _, ...restDownloading } = state.isDownloading;
@@ -145,6 +147,7 @@ export const useOfflineStore = create<OfflineStore>()(
           }
         } catch (e) {
           console.error("Failed to verify offline file", e);
+          Alert.alert("Playback Error", "The downloaded track file could not be verified. It may be corrupted or deleted.");
         }
         
         return null;

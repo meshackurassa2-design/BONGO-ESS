@@ -6,6 +6,8 @@ import {
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import AppBannerAd from '../../components/ads/AppBannerAd';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { supabase } from '../../lib/supabase';
@@ -973,6 +975,10 @@ export default function HomeScreen() {
               onPress={() => router.push('/view-all?type=live')}
             />
           )}
+          
+          <View style={{ marginTop: 24, marginBottom: 40, alignItems: 'center' }}>
+            <AppBannerAd />
+          </View>
           
         </Animated.ScrollView>
       </View>
