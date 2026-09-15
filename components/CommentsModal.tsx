@@ -134,7 +134,7 @@ export default function CommentsModal({ visible, onClose, trackId }: CommentsMod
               renderItem={({ item }) => (
                 <View style={styles.commentCard}>
                   <Image 
-                    source={item.profile?.avatar_url ? { uri: item.profile.avatar_url } : require('../assets/default-avatar.png')} 
+                    source={item.profile?.avatar_url ? { uri: item.profile.avatar_url } : require('../assets/icon.png')} 
                     style={styles.avatar} 
                   />
                   <View style={styles.commentBody}>
