@@ -107,7 +107,7 @@ export default function DiscoverScreen() {
         renderItem={({ item, index }) => (
           <View style={[styles.slide, { height: WINDOW_HEIGHT }]}>
             <Image 
-              source={item.cover_url ? { uri: item.cover_url } : require('../assets/default-cover.png')} 
+              source={item.cover_url ? { uri: item.cover_url } : require('../assets/icon.png')} 
               style={StyleSheet.absoluteFillObject}
               contentFit="cover"
             />
