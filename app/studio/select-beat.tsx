@@ -59,7 +59,7 @@ export default function SelectBeatScreen() {
               style={styles.trackCard}
               onPress={() => router.push({ pathname: '/studio/record', params: { beatId: item.id, beatUrl: item.audio_url, beatTitle: item.title } })}
             >
-              <Image source={item.cover_url ? { uri: item.cover_url } : require('../../assets/default-cover.png')} style={styles.cover} />
+              <Image source={item.cover_url ? { uri: item.cover_url } : require('../../assets/icon.png')} style={styles.cover} />
               <View style={styles.trackInfo}>
                 <Text style={styles.trackTitle}>{item.title}</Text>
                 <Text style={styles.trackArtist}>{item.profile?.display_name || 'Unknown'}</Text>
