@@ -41,7 +41,7 @@ export default function DiscoverScreen() {
     // Fetch random public tracks. Limit to 20 for performance.
     const { data, error } = await supabase
       .from('tracks')
-      .select('*, profile:profiles(*)')
+      .select('*, profile:profiles!tracks_user_id_fkey(*)')
       .eq('is_public', true)
       .limit(20);
 
