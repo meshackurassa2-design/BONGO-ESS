@@ -9,6 +9,9 @@ import { supabase } from '../lib/supabase';
 import * as Haptics from 'expo-haptics';
 import * as React from 'react';
 import { Alert } from 'react-native';
+import { Audio } from 'expo-av';
+
+let backgroundBeatSound: Audio.Sound | null = null;
 
 export enum State {
   None = 'none',
@@ -273,6 +276,27 @@ export const usePlayerStore = create<PlayerStore>()(
 
     try {
       await TrackPlayer.reset();
+
+      if (backgroundBeatSound) {
+        await backgroundBeatSound.stopAsync();
+        await backgroundBeatSound.unloadAsync();
+        backgroundBeatSound = null;
+      }
+
+      if (track.parent_beat_id) {
+        try {
+          const { data: beatData } = await supabase.from('tracks').select('audio_url').eq('id', track.parent_beat_id).single();
+          if (beatData?.audio_url) {
+            const { sound } = await Audio.Sound.createAsync({ uri: beatData.audio_url });
+            backgroundBeatSound = sound;
+            await backgroundBeatSound.setIsLoopingAsync(true);
+            await backgroundBeatSound.playAsync();
+          }
+        } catch (e) {
+          console.warn('Failed to load parent beat audio', e);
+        }
+      }
+
       await TrackPlayer.add([tpTrack]);
       await TrackPlayer.setRate(get().playbackRate);
       await TrackPlayer.play();
@@ -293,8 +317,10 @@ export const usePlayerStore = create<PlayerStore>()(
     const state = (await TrackPlayer.getPlaybackState()).state;
     if (state === TPState.Playing) {
       await TrackPlayer.pause();
+      if (backgroundBeatSound) await backgroundBeatSound.pauseAsync();
     } else {
       await TrackPlayer.play();
+      if (backgroundBeatSound) await backgroundBeatSound.playAsync();
     }
   },
 
@@ -303,6 +329,7 @@ export const usePlayerStore = create<PlayerStore>()(
     const state = (await TrackPlayer.getPlaybackState()).state;
     if (state === TPState.Playing) {
       await TrackPlayer.pause();
+      if (backgroundBeatSound) await backgroundBeatSound.pauseAsync();
     }
   },
 

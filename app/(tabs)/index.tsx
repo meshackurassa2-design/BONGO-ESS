@@ -625,8 +625,8 @@ export default function HomeScreen() {
             <Text style={{ color: '#fff', fontSize: 28, fontWeight: '800', marginLeft: 4 }}>Good Music</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <TouchableOpacity style={styles.bellBtn} onPress={() => router.push('/search')}>
-              <Ionicons name="search" size={20} color="#fff" />
+            <TouchableOpacity style={styles.bellBtn} onPress={() => router.push('/discover')}>
+              <Ionicons name="compass-outline" size={22} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.bellBtn} onPress={() => router.push('/notifications')}>
               <Ionicons name="notifications" size={20} color="#fff" />

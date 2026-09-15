@@ -19,6 +19,7 @@ import { supabase } from '../lib/supabase';
 import { useRewardedAd } from '../components/ads/useRewardedAd';
 import AppBannerAd from '../components/ads/AppBannerAd';
 import ShareCardModal from '../components/ShareCardModal';
+import CommentsModal from '../components/CommentsModal';
 import { ScrollView, FlatList } from 'react-native';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useProgress, usePlaybackState, State } from '../store/playerStore';
@@ -264,6 +265,7 @@ export default function PlayerScreen() {
   const [isSharing, setIsSharing] = useState(false);
   const session = useAuthStore(s => s.session);
   const profile = useAuthStore(s => s.profile);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [myPlaylists, setMyPlaylists] = useState<any[]>([]);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
@@ -736,6 +738,9 @@ export default function PlayerScreen() {
               <Ionicons name="camera" size={26} color={COLORS.gold} />
             </TouchableOpacity>
           )}
+          <TouchableOpacity style={styles.downloadBtn} onPress={() => setShowCommentsModal(true)}>
+            <Ionicons name="chatbubble-ellipses-outline" size={26} color={COLORS.textSecondary} />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.downloadBtn} onPress={openPlaylistModal}>
             <Ionicons name="list" size={26} color={COLORS.textSecondary} />
           </TouchableOpacity>
@@ -1178,6 +1183,12 @@ export default function PlayerScreen() {
         onClose={() => setShowShareModal(false)}
         track={currentTrack}
         quote={currentQuote}
+      />
+
+      <CommentsModal 
+        visible={showCommentsModal} 
+        onClose={() => setShowCommentsModal(false)} 
+        trackId={currentTrack.id} 
       />
     </View>
   );

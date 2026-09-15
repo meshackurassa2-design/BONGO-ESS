@@ -28,6 +28,7 @@ import { StyleSheet } from 'react-native';
 import AnimatedSplash from '../components/AnimatedSplash';
 import ThemeEffects from '../components/ThemeEffects';
 import { useFonts, Outfit_400Regular, Outfit_600SemiBold, Outfit_700Bold, Outfit_800ExtraBold, Outfit_900Black } from '@expo-google-fonts/outfit';
+import { registerForPushNotificationsAsync } from '../lib/notifications';
 import '../i18n';
 
 // Ignore harmless background Supabase auth network errors and Expo Go splash screen fast-refresh warnings in dev mode
@@ -63,6 +64,12 @@ export default function RootLayout() {
       ScreenCapture.allowScreenCaptureAsync().catch(() => {});
     } catch (e) {}
   }, []);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      registerForPushNotificationsAsync(session.user.id);
+    }
+  }, [session?.user?.id]);
 
   useEffect(() => {
     // Hide the NATIVE splash screen only once fonts are loaded and auth has resolved.

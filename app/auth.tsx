@@ -59,20 +59,34 @@ export default function AuthScreen() {
 
     let error: string | null;
     if (mode === 'login') {
-      let loginEmail = email.trim();
-      // If it doesn't have an @ symbol, assume it's a username and lookup the email securely
+      let loginEmail = email.trim().toLowerCase();
       if (!loginEmail.includes('@')) {
-        const { data: fetchedEmail, error: rpcError } = await import('../lib/supabase').then(m => m.supabase.rpc('get_user_email', { p_username: loginEmail.toLowerCase() }));
-        if (fetchedEmail) {
-          loginEmail = fetchedEmail;
+        // Check if it's a phone number (mostly digits)
+        if (/^\+?\d+$/.test(loginEmail)) {
+          loginEmail = `${loginEmail}@bongoapp.local`;
         } else {
-          Alert.alert('Kosa', 'Jina la mtumiaji halijapatikana (Username not found)');
-          return;
+          // It's a username lookup
+          const { data: fetchedEmail, error: rpcError } = await import('../lib/supabase').then(m => m.supabase.rpc('get_user_email', { p_username: loginEmail }));
+          if (fetchedEmail) {
+            loginEmail = fetchedEmail;
+          } else {
+            Alert.alert('Kosa', 'Akaunti haijapatikana (Account not found)');
+            return;
+          }
         }
       }
       error = await signIn(loginEmail, password);
     } else {
-      error = await signUp(email.trim(), password, username.trim().toLowerCase(), displayName.trim() || username.trim(), isArtist ? 'artist' : 'fan');
+      let finalEmail = email.trim().toLowerCase();
+      if (!finalEmail.includes('@')) {
+        if (/^\+?\d+$/.test(finalEmail)) {
+          finalEmail = `${finalEmail}@bongoapp.local`;
+        } else {
+          Alert.alert('Kosa', 'Tafadhali weka barua pepe au namba ya simu sahihi');
+          return;
+        }
+      }
+      error = await signUp(finalEmail, password, username.trim().toLowerCase(), displayName.trim() || username.trim(), isArtist ? 'artist' : 'fan');
     }
 
     if (error) {
@@ -109,7 +123,7 @@ export default function AuthScreen() {
           </>
         )}
 
-        <Field styles={styles} COLORS={COLORS} label={mode === 'login' ? "Barua Pepe au Jina la Mtumiaji" : "Barua Pepe"} value={email} onChange={setEmail} placeholder={mode === 'login' ? "mfano@gmail.com au @username" : "mfano@gmail.com"} icon={mode === 'login' ? "person-outline" : "mail-outline"} keyboardType={mode === 'login' ? "default" : "email-address"} autoCapitalize="none" />
+        <Field styles={styles} COLORS={COLORS} label={mode === 'login' ? "Namba ya Simu, Barua Pepe au Username" : "Namba ya Simu au Barua Pepe"} value={email} onChange={setEmail} placeholder={mode === 'login' ? "07... au mfano@gmail.com" : "07... au mfano@gmail.com"} icon={mode === 'login' ? "person-outline" : "call-outline"} keyboardType={mode === 'login' ? "default" : "email-address"} autoCapitalize="none" />
 
         {/* Password */}
         <Text style={styles.fieldLabel}>Nywila</Text>

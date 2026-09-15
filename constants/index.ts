@@ -138,12 +138,14 @@ export type Track = {
   duration_sec: number;
   play_count: number;
   like_count: number;
+  comment_count?: number;
   description: string | null;
   is_public: boolean;
   lyrics?: string;
   is_ai?: boolean;
   lyrics_swahili?: string | null;
   lyrics_english?: string | null;
+  parent_beat_id?: string;
   created_at: string;
   profile?: Profile;
 };
