@@ -21,6 +21,7 @@ if (global.ErrorUtils) {
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../store/authStore';
+import { usePlayerStore } from '../store/playerStore';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider, DarkTheme } from '@react-navigation/native';
 import { StyleSheet } from 'react-native';
@@ -55,6 +56,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     useAuthStore.getState().init();
+    usePlayerStore.getState().initPlayer();
     
     // Force allow screenshots globally in case the native flag is stuck from hot-reloading
     try {

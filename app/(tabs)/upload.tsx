@@ -14,6 +14,7 @@ import { useThemeStore } from '../../store/themeStore';
 import { GENRES } from '../../constants';
 import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
+import { Audio } from 'expo-av';
 
 type EPTrack = {
   title: string;
@@ -142,6 +143,16 @@ export default function UploadScreen() {
 
       setProgress(0.5);
       setProgressLabel('Uploading audio file...');
+      
+      let durationSec = 0;
+      try {
+        const { sound, status } = await Audio.Sound.createAsync({ uri: audioFile.uri });
+        if (status.isLoaded && status.durationMillis) {
+          durationSec = Math.floor(status.durationMillis / 1000);
+        }
+        await sound.unloadAsync();
+      } catch(e) {}
+
       const audioBase64 = await FileSystem.readAsStringAsync(audioFile.uri, { encoding: 'base64' });
       const ext = audioFile.name.split('.').pop() ?? 'mp3';
       const audioFileName = `${userId}/audio_${Date.now()}.${ext}`;
@@ -168,7 +179,7 @@ export default function UploadScreen() {
         lyrics_swahili: lyricsSwahili.trim() || null,
         lyrics_english: lyricsEnglish.trim() || null,
         is_public: true,
-        duration_sec: 0,
+        duration_sec: durationSec,
         copyright_cleared: true,
       });
       if (dbError) throw dbError;
@@ -226,6 +237,15 @@ export default function UploadScreen() {
         setProgress(0.2 + ((i + 1) / epTracks.length) * 0.6);
         setProgressLabel(`Uploading track ${i + 1} of ${epTracks.length}...`);
 
+        let durationSec = 0;
+        try {
+          const { sound, status } = await Audio.Sound.createAsync({ uri: track.audioFile!.uri });
+          if (status.isLoaded && status.durationMillis) {
+            durationSec = Math.floor(status.durationMillis / 1000);
+          }
+          await sound.unloadAsync();
+        } catch(e) {}
+
         const audioBase64 = await FileSystem.readAsStringAsync(track.audioFile!.uri, { encoding: 'base64' });
         const ext = track.audioFile!.name.split('.').pop() ?? 'mp3';
         const audioFileName = `${userId}/audio_${Date.now()}_${i}.${ext}`;
@@ -251,7 +271,7 @@ export default function UploadScreen() {
           lyrics_swahili: track.lyricsSwahili.trim() || null,
           lyrics_english: track.lyricsEnglish.trim() || null,
           is_public: true,
-          duration_sec: 0,
+          duration_sec: durationSec,
           copyright_cleared: true,
         }).select('id').single();
 

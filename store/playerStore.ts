@@ -216,7 +216,6 @@ export const usePlayerStore = create<PlayerStore>()(
       }
     } catch (e) {
         console.log('TrackPlayer init error:', e);
-        Alert.alert("Init Error", String(e));
         if (String(e).includes('already initialized')) {
           set({ isPlayerReady: true });
         }
@@ -287,6 +286,9 @@ export const usePlayerStore = create<PlayerStore>()(
 
   togglePlayPause: async () => {
     if (get().mode === 'listener') return;
+    if (!get().isPlayerReady) {
+      await get().initPlayer();
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     const state = (await TrackPlayer.getPlaybackState()).state;
     if (state === TPState.Playing) {
@@ -308,7 +310,34 @@ export const usePlayerStore = create<PlayerStore>()(
     if (get().mode === 'listener') return;
     const { queue, currentTrack, isShuffled, playTrack } = get();
     if (!currentTrack || queue.length === 0) return;
+    
     const currentIdx = queue.findIndex(t => t.id === currentTrack.id);
+    
+    // Auto Play logic for when the queue ends
+    if (!isShuffled && currentIdx === queue.length - 1) {
+      try {
+        const { data } = await supabase
+          .from('tracks')
+          .select('*, profile:profiles!tracks_user_id_fkey(*)')
+          .eq('genre', currentTrack.genre || 'Bongo Flava')
+          .neq('id', currentTrack.id)
+          .eq('is_public', true)
+          .limit(10);
+        
+        if (data && data.length > 0) {
+          const nextTracks = data.sort(() => 0.5 - Math.random());
+          const newQueue = [...queue, ...nextTracks];
+          await playTrack(nextTracks[0], newQueue);
+          return;
+        }
+      } catch (e) {
+        console.error("Auto Play fetch error", e);
+      }
+      // Stop if no similar tracks found
+      await TrackPlayer.pause();
+      return;
+    }
+
     const nextIdx = isShuffled
       ? Math.floor(Math.random() * queue.length)
       : (currentIdx + 1) % queue.length;
@@ -448,25 +477,28 @@ export const usePlayerStore = create<PlayerStore>()(
   }
 ));
 
-try {
-  TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, async (event) => {
-    const store = usePlayerStore.getState();
-    if (event.position > 30 && !store.hasCountedPlay) {
-      store.markPlayCounted();
-    }
-  });
+if (!(global as any)._playerListenersRegistered) {
+  try {
+    (global as any)._playerListenersRegistered = true;
+    TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, async (event) => {
+      const store = usePlayerStore.getState();
+      if (event.position > 30 && !store.hasCountedPlay) {
+        store.markPlayCounted();
+      }
+    });
 
-  TrackPlayer.addEventListener(Event.PlaybackQueueEnded, async (event) => {
-    const store = usePlayerStore.getState();
-    if (store.repeatOne) {
-      await TrackPlayer.seekTo(0);
-      await TrackPlayer.play();
-    } else {
-      store.skipNext();
-    }
-  });
+    TrackPlayer.addEventListener(Event.PlaybackQueueEnded, async (event) => {
+      const store = usePlayerStore.getState();
+      if (store.repeatOne) {
+        await TrackPlayer.seekTo(0);
+        await TrackPlayer.play();
+      } else {
+        store.skipNext();
+      }
+    });
 
-  TrackPlayer.addEventListener(Event.PlaybackState, async (event) => {
-    notifyPlaybackState(mapTPState(event.state));
-  });
-} catch(e) {}
+    TrackPlayer.addEventListener(Event.PlaybackState, async (event) => {
+      notifyPlaybackState(mapTPState(event.state));
+    });
+  } catch(e) {}
+}
